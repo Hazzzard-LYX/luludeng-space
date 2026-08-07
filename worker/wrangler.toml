@@ -9,4 +9,4 @@ ALLOWED_ORIGINS = "https://luludeng.space,http://127.0.0.1:4173,http://localhost
 [[d1_databases]]
 binding = "DB"
 database_name = "luludeng-messages"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "d8e24a0d-5167-465e-86e9-e47948e69995"
