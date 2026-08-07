@@ -7,6 +7,10 @@ const messageText = document.getElementById("message-text");
 const messageCount = document.getElementById("message-count");
 const messageStatus = document.getElementById("message-status");
 const messageList = document.getElementById("message-list");
+const messageApiBase = String(window.LULU_MESSAGE_API_BASE || "").replace(/\/+$/, "");
+const messagesApiUrl = `${messageApiBase}/api/messages`;
+const messageAuthor = String(window.LULU_MESSAGE_AUTHOR || "噜噜 & 噔噔").trim();
+const messageMood = String(window.LULU_MESSAGE_MOOD || "love").trim();
 
 let messages = [];
 let readingPages = [];
@@ -14,6 +18,14 @@ let currentPage = 0;
 let composeTextareas = [messageText];
 let currentComposePage = 0;
 let isTurning = false;
+
+function normalizeMessage(message) {
+  return {
+    ...message,
+    text: typeof message.content === "string" ? message.content : String(message.text || ""),
+    createdAt: message.created_at || message.createdAt || ""
+  };
+}
 
 const composeHeading = document.createElement("div");
 composeHeading.className = "compose-heading";
@@ -375,15 +387,20 @@ function finishCompose(saved) {
 
 async function loadMessages() {
   try {
-    const response = await fetch("/api/messages", { cache: "no-store" });
+    const response = await fetch(messagesApiUrl, { cache: "no-store" });
     if (response.ok) {
-      messages = (await response.json()).messages || [];
+      const result = await response.json();
+      messages = (Array.isArray(result.messages) ? result.messages : [])
+        .map(normalizeMessage)
+        .filter(message => message.id && message.text);
       rebuildReadingPages(true);
       return;
     }
   } catch {}
 
-  messages = Array.isArray(window.LULU_MESSAGES) ? window.LULU_MESSAGES : [];
+  messages = (Array.isArray(window.LULU_MESSAGES) ? window.LULU_MESSAGES : [])
+    .map(normalizeMessage)
+    .filter(message => message.id && message.text);
   rebuildReadingPages(true);
 }
 
@@ -391,7 +408,7 @@ async function deleteMessage(id) {
   if (!confirm("确定擦掉这条留言吗？")) return;
 
   try {
-    const response = await fetch(`/api/messages?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const response = await fetch(`${messagesApiUrl}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     if (!response.ok) throw new Error();
     messages = messages.filter(message => message.id !== id);
     rebuildReadingPages(true);
@@ -440,15 +457,19 @@ messageForm.addEventListener("submit", async event => {
   messageStatus.textContent = "正在把这句话写进笔记本……";
 
   try {
-    const response = await fetch("/api/messages", {
+    const response = await fetch(messagesApiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({
+        author: messageAuthor || "我们",
+        content: text,
+        mood: messageMood || null
+      })
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "保存失败");
 
-    messages.push(result.message);
+    messages.push(normalizeMessage(result.message));
     reflowComposeText("", 0, false);
     messageStatus.textContent = "写好了。";
     finishCompose(true);
