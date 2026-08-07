@@ -394,7 +394,7 @@ async function loadMessages() {
         .map(normalizeMessage)
         .filter(message => message.id && message.text);
       rebuildReadingPages(true);
-      return;
+      return true;
     }
   } catch {}
 
@@ -402,6 +402,7 @@ async function loadMessages() {
     .map(normalizeMessage)
     .filter(message => message.id && message.text);
   rebuildReadingPages(true);
+  return false;
 }
 
 async function deleteMessage(id) {
@@ -469,7 +470,8 @@ messageForm.addEventListener("submit", async event => {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "保存失败");
 
-    messages.push(normalizeMessage(result.message));
+    const refreshed = await loadMessages();
+    if (!refreshed) messages.push(normalizeMessage(result.message));
     reflowComposeText("", 0, false);
     messageStatus.textContent = "写好了。";
     finishCompose(true);
