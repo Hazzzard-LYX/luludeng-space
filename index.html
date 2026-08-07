@@ -1,6 +1,6 @@
-﻿<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LuLu & DengDeng</title><link rel="stylesheet" href="pages.css"></head>
-<body class="matcha-home"><main class="matcha-shell">
-  <header class="matcha-head"><a class="matcha-logo" href="index.html">Lulu <b>♥</b> DengDeng</a><span>OUR LITTLE UNIVERSE · SINCE 2026</span></header>
+﻿<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LuLu & DengDeng</title><link rel="stylesheet" href="pages.css"><script src="auth.js"></script></head>
+<body class="matcha-home"><link rel="stylesheet" href="message-board-visibility.css"><main class="matcha-shell">
+  <header class="matcha-head"><a class="matcha-logo" href="index.html">Lulu <b>&amp;</b> DengDeng</a><span>OUR LITTLE UNIVERSE · SINCE 2026</span></header>
   <section class="love-clock" aria-label="我们在一起的时间">
     <p class="clock-kicker">WE HAVE BEEN TOGETHER FOR</p>
     <div class="clock-days"><strong id="days">00</strong><span>天</span></div>
@@ -8,8 +8,11 @@
     <p class="clock-since">从 2026 年 6 月 26 日 晚上八点开始</p>
   </section>
   <nav class="home-doors">
-    <a href="us.html" class="home-door us-door"><div class="door-photo"><img src="assets/shanghai/our first photo.jpg" alt="我们的第一张照片"></div><div><small>01 / MEMORIES</small><h2>Us</h2><p>收藏属于我们的瞬间</p></div><b>→</b></a>
-    <a href="places.html" class="home-door places-door"><div class="mini-map"><i></i><span class="mini-dot d1"></span><span class="mini-dot d2"></span><span class="mini-dot d3"></span></div><div><small>02 / JOURNEY</small><h2>Places</h2><p>上海 · 香港 · 深圳</p></div><b>→</b></a>
+    <a href="us.html" class="home-door us-door"><div class="door-photo"><img src="assets/香港/kiss her cheek.jpg" alt="亲吻她的脸颊"></div><div><small>01 / MEMORIES</small><h2>照片墙</h2><p>凝固的时间</p></div><b>→</b></a>
+    <a href="places.html" class="home-door places-door"><div class="mini-map"><img src="assets/world-map.png" alt="世界地图"></div><div><small>02 / JOURNEY</small><h2>地图册</h2><p>流动的空间</p></div><b>→</b></a>
   </nav>
-</main><script src="timer.js"></script></body></html>
+  <button id="message-board-tab" class="message-board-tab" type="button" aria-controls="message-board" aria-expanded="false">留言板</button>
+  <aside id="message-board" class="message-board" aria-hidden="true"><div class="notebook"><button id="message-board-close" class="message-board-close" type="button" aria-label="关闭留言板">×</button><header><small>NOTES BETWEEN US</small><h2>留言板</h2><p>写给此刻，也写给以后。</p></header><form id="message-form"><label for="message-text">今天想说的话</label><textarea id="message-text" maxlength="500" placeholder="在这里写下一句话……" required></textarea><div><span id="message-count">0 / 500</span><button type="submit">留下这句话</button></div><p id="message-status" role="status" aria-live="polite"></p></form><section id="message-list" class="message-list" aria-label="我们的留言"></section></div></aside>
+</main><script src="timer.js"></script><script src="messages-data.js"></script><script src="message-board.js"></script></body></html>
+
 

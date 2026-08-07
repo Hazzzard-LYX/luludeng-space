@@ -1,42 +1,5 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Places｜LuLu & DengDeng</title>
-  <link rel="stylesheet" href="pages.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-</head>
-<body class="page matcha-page world-map-page">
-  <header class="page-head">
-    <a class="back" href="index.html">← 返回首页</a>
-    <a class="matcha-logo" href="index.html">Lulu <b>♥</b> DengDeng</a>
-    <a href="us.html" class="next-link">Us →</a>
-  </header>
-  <main class="world-map-layout">
-    <aside class="world-map-sidebar">
-      <div>
-        <span class="kicker">02 / PLACES</span>
-        <h1>我们的<br>世界地图</h1>
-        <p>去过的地方会变成一枚图钉，<br>留在我们的共同世界里。</p>
-      </div>
-      <div class="pin-instructions">
-        <span>HOW TO USE</span>
-        <p>先选择“足迹”或“愿望”，再点击地图上的位置。图钉可以拖动，也会自动保存在这台设备上。</p>
-      </div>
-      <div class="map-actions">
-        <div class="pin-type-buttons"><button id="add-footprint" class="primary-map-button footprint-button" type="button"><span>＋</span> 添加足迹</button><button id="add-wish" class="primary-map-button wish-button" type="button"><span>＋</span> 添加愿望</button></div>
-        <div><button id="undo-pin" type="button">撤销上一个</button><button id="clear-pins" type="button">清空自定义图钉</button></div>
-      </div>
-      <p class="pin-count"><b id="pin-count">3</b> places pinned</p>
-    </aside>
-    <section class="map-stage">
-      <div id="world-map" aria-label="可交互的世界地图"></div>
-      <div class="map-mode" id="map-mode">浏览地图</div>
-      <div class="map-legend"><span><i class="legend-footprint"></i> 足迹 · 已经去过</span><span><i class="legend-wish"></i> 愿望 · 想去的地方</span></div>
-    </section>
-  </main>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="places-map.js"></script>
-</body>
-</html>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Places｜LuLu & DengDeng</title><link rel="stylesheet" href="pages.css"><link rel="stylesheet" href="vendor/leaflet/leaflet.css"><script src="auth.js"></script></head>
+<body class="page matcha-page static-map-page"><header class="page-head"><a class="back" href="index.html">← 返回首页</a><a class="matcha-logo" href="index.html">L噜噜 <b>&amp;</b> 噔噔</a><a href="us.html" class="next-link">Us →</a></header>
+<main class="static-map-layout"><aside class="static-map-sidebar"><div><span class="kicker">02 / PLACES</span><h1>我们的<br>世界地图</h1><p>绿色是已经留下的足迹，<br>红色是许愿想去的地方。<br>滚轮缩放 · 右键图钉删除地点。</p></div><div id="pending-guide" class="pending-guide" hidden><span>NEW FOOTPRINT</span><h2 id="pending-address"></h2><p>请在右侧地图点击位置。确认图钉后，照片才会保存到新的地址文件夹。</p><button id="confirm-location" type="button" disabled>确认足迹并保存照片 →</button></div><div class="map-actions"><div class="pin-type-buttons"><button id="add-footprint" class="primary-map-button footprint-button" type="button"><span>＋</span> 添加足迹</button><button id="add-wish" class="primary-map-button wish-button" type="button"><span>＋</span> 添加愿望</button></div><div><button id="undo-pin" type="button">撤销上一个</button><button id="clear-pins" type="button">清空自定义图钉</button></div></div><p class="pin-count"><b id="pin-count">3</b> places pinned</p></aside>
+<section class="offline-map-stage" id="offline-map-stage"><div id="offline-map" aria-label="离线世界地图"></div><div class="offline-zoom"><button id="zoom-out" type="button" aria-label="缩小">−</button><span id="zoom-label">世界</span><button id="zoom-in" type="button" aria-label="放大">＋</button></div><div class="map-mode" id="map-mode">点击图钉查看地点</div><div class="map-legend"><span><i class="legend-footprint"></i> 足迹</span><span><i class="legend-wish"></i> 愿望</span></div><small class="map-credit">Offline map · Natural Earth · Public Domain</small></section></main>
+<script src="vendor/leaflet/leaflet.js"></script><script src="places-data.js"></script><script src="places-map.js"></script></body></html>
