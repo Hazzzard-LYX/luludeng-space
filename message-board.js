@@ -7,8 +7,7 @@ const messageText = document.getElementById("message-text");
 const messageCount = document.getElementById("message-count");
 const messageStatus = document.getElementById("message-status");
 const messageList = document.getElementById("message-list");
-const messageApiBase = String(window.LULU_MESSAGE_API_BASE || "").replace(/\/+$/, "");
-const messagesApiUrl = `${messageApiBase}/api/messages`;
+const messagesApiUrl = "https://luludeng-api.13404211257.workers.dev/api/messages";
 const messageAuthor = String(window.LULU_MESSAGE_AUTHOR || "噜噜 & 噔噔").trim();
 const messageMood = String(window.LULU_MESSAGE_MOOD || "love").trim();
 
