@@ -22,9 +22,35 @@
 
   // "阿坝藏族羌族自治州" → "阿坝" for labels and pin names; the full name stays searchable in `f`.
   const ETHNIC_PREFECTURE = /(蒙古族|蒙古|藏族|羌族|彝族|朝鲜族|土家族|苗族|侗族|布依族|傣族|景颇族|哈尼族|壮族|白族|傈僳族|回族|哈萨克|柯尔克孜)+自治州$/;
+  // Each city keeps its normalized names in `k` so searching tens of thousands of places stays quick.
+  function withKeys(city) {
+    return { ...city, k: [city.n, city.f, city.en].filter(Boolean).map(normalize) };
+  }
   const cities = (Array.isArray(window.LULU_CITIES) ? window.LULU_CITIES : [])
     .filter(city => city.n && Number.isFinite(city.lat) && Number.isFinite(city.lng))
-    .map(city => ETHNIC_PREFECTURE.test(city.n) ? { ...city, n: city.n.replace(ETHNIC_PREFECTURE, "") || city.n } : city);
+    .map(city => ETHNIC_PREFECTURE.test(city.n) ? { ...city, n: city.n.replace(ETHNIC_PREFECTURE, "") || city.n } : city)
+    .map(withKeys);
+
+  // geo/cities-more.js (smaller towns, ~600 KB gzipped) loads after the map is on screen.
+  function loadMoreCities() {
+    return new Promise(resolve => {
+      const script = document.createElement("script");
+      script.src = "geo/cities-more.js";
+      script.async = true;
+      script.onload = () => {
+        const data = window.LULU_CITIES_MORE;
+        if (data && Array.isArray(data.d)) {
+          data.d.forEach(([zh, en, country, lat, lng, thousands]) => {
+            cities.push(withKeys({ n: zh || en, en, p: data.c[country] || country, lat, lng, r: thousands >= 100 ? 3 : 4, latinOnly: !zh }));
+          });
+        }
+        delete window.LULU_CITIES_MORE;
+        resolve(true);
+      };
+      script.onerror = () => resolve(false);
+      document.head.append(script);
+    });
+  }
 
   const map = L.map("offline-map", {
     center: [31, 108],
@@ -109,6 +135,8 @@
   function minZoomForCity(city) {
     if (city.r === 1) return 3;
     if (city.r === 2) return 4.5;
+    if (city.latinOnly) return 8.5; // towns without a Chinese name: searchable, labelled only when fully zoomed in
+    if (city.r === 4) return 7.5; // small towns only once you are close in
     return city.en ? 6.5 : 5.5; // Chinese prefecture cities appear before small world cities
   }
 
@@ -137,7 +165,7 @@
       const dot = L.circleMarker([city.lat, city.lng], {
         pane: "cities",
         renderer: canvas,
-        radius: city.r === 1 ? 3.6 : city.r === 2 ? 3 : 2.4,
+        radius: city.r === 1 ? 3.6 : city.r === 2 ? 3 : city.r === 3 ? 2.4 : 2,
         color: "#f8f6ec",
         weight: 1,
         fillColor: city.r === 1 ? "#5f7653" : "#8a9d7d",
@@ -387,7 +415,7 @@
   /* ---------- search ---------- */
 
   function normalize(value) {
-    return String(value || "").toLowerCase().replace(/[\s\-_.,，。·]+/g, "").replace(/(特别行政区|自治州|地区|市|省)$/, "");
+    return String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[\s\-_.,，。·'’]+/g, "").replace(/(特别行政区|自治州|地区|市|省)$/, "");
   }
 
   function searchCities(query, limit = 8) {
@@ -396,7 +424,7 @@
     const scored = [];
     cities.forEach(city => {
       let score = Infinity;
-      [city.n, city.f, city.en].filter(Boolean).map(normalize).forEach(name => {
+      city.k.forEach(name => {
         if (name === wanted) score = Math.min(score, 0);
         else if (name.startsWith(wanted)) score = Math.min(score, 1);
         else if (name.includes(wanted)) score = Math.min(score, 2);
@@ -474,17 +502,23 @@
 
   /* ---------- photo waiting for a location ---------- */
 
+  // Place the pin for the uploaded photo when its address names a known city. Returns true if it did.
+  function autoPlacePending() {
+    if (!pendingId || !pendingAddress || pendingPoint) return false;
+    const match = searchCities(pendingAddress, 1)[0];
+    if (!match || !match.k.includes(normalize(pendingAddress))) return false;
+    map.setView([match.lat, match.lng], CITY_ZOOM - 1);
+    setPending(L.latLng(match.lat, match.lng), match.n);
+    document.getElementById("pending-hint").textContent = `已根据地址找到“${match.n}”（${match.p}）。不对的话，可以重新搜索或在地图上点击。`;
+    return true;
+  }
+
   if (pendingId) {
     document.getElementById("pending-guide").hidden = false;
     document.getElementById("pending-address").textContent = pendingAddress || "新的地点";
     document.querySelector(".map-actions").hidden = true;
     stage.classList.add("adding");
-    const match = pendingAddress ? searchCities(pendingAddress, 1)[0] : null;
-    if (match && normalize(match.n) === normalize(pendingAddress)) {
-      map.setView([match.lat, match.lng], CITY_ZOOM - 1);
-      setPending(L.latLng(match.lat, match.lng), match.n);
-      document.getElementById("pending-hint").textContent = `已根据地址找到“${match.n}”（${match.p}）。不对的话，可以重新搜索或在地图上点击。`;
-    } else {
+    if (!autoPlacePending()) {
       modeLabel.textContent = "搜索城市，或在地图上点击位置";
       if (pendingAddress) searchInput.value = pendingAddress;
     }
@@ -520,7 +554,12 @@
   render();
   updateZoom();
   drawCities();
-  loadBaseMap();
+  loadBaseMap().then(loadMoreCities).then(loaded => {
+    if (!loaded) return;
+    drawCities();
+    autoPlacePending();
+    if (document.activeElement === searchInput && searchInput.value.trim()) showResults(searchCities(searchInput.value));
+  });
   window.LULU_API.loadPlaces().then(places => {
     onlinePlaces = places.filter(place => Number.isFinite(Number(place.lat)) && Number.isFinite(Number(place.lng)));
     if (onlinePlaces.length) render();
