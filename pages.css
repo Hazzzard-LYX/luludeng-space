@@ -73,3 +73,26 @@
 .pending-guide{margin-top:18px}
 @media(max-width:760px){.city-search{margin-top:12px}.city-results{max-height:240px}}
 @media(max-width:760px){.offline-map-stage{height:min(72vh,560px)}.offline-map-stage .map-mode{top:auto;bottom:10px;left:10px;transform:none;max-width:62%;white-space:normal;line-height:1.5}}
+
+/* Photo wall: collapsible upload panel */
+.manager-close{position:absolute;z-index:3;top:80px;right:16px;border:0;background:none;color:#6f8069;font:inherit;font-size:10px;letter-spacing:.12em;padding:6px 4px;cursor:pointer}
+.manager-close:hover{color:#455943}
+.manager-close i{font-style:normal;display:inline-block;margin-left:2px}
+.manager-open{display:none;position:fixed;z-index:21;left:19px;bottom:60px;align-items:center;gap:7px;border:0;background:#728963;color:#fff;padding:11px 16px;font:inherit;font-size:11px;letter-spacing:.08em;cursor:pointer;box-shadow:0 6px 20px #34432e40}
+.manager-open:hover{background:#566e4e}
+.manager-open span{font-size:16px;line-height:1}
+.us-loop-page.manager-collapsed .photo-loop-viewport{grid-template-columns:1fr}
+.us-loop-page.manager-collapsed .gallery-manager{display:none}
+.us-loop-page.manager-collapsed .manager-open{display:flex}
+@keyframes manager-sheet-in{from{transform:translateY(100%)}to{transform:none}}
+@media(max-width:760px){
+.us-loop-page .gallery-manager{position:fixed;z-index:30;left:0;right:0;top:auto;bottom:0;width:auto;max-height:82vh;overflow:auto;padding:24px 22px calc(20px + env(safe-area-inset-bottom));border-radius:16px 16px 0 0;box-shadow:0 -12px 34px #2c3a2850;animation:manager-sheet-in .28s ease-out}
+.us-loop-page .gallery-manager h2{font-size:25px;margin:6px 0}
+.us-loop-page .gallery-manager>p{margin-bottom:14px}
+.manager-close{top:18px;right:18px;font-size:11px;padding:6px 8px;background:#e2e9d8}
+.manager-close i{transform:rotate(-90deg)}
+.manager-open{left:11px;bottom:11px;height:50px;padding:0 18px;border-radius:25px}
+.us-loop-page:not(.manager-collapsed) .photo-loop-viewport::after{content:"";position:fixed;inset:0;z-index:25;background:#2c3a2859}
+.us-loop-page:not(.manager-collapsed) .stream-counter{display:none}
+}
+@media(prefers-reduced-motion:reduce){.us-loop-page .gallery-manager{animation:none}}

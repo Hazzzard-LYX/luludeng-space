@@ -109,6 +109,39 @@ const form = document.getElementById("upload-form"), fileInput = document.getEle
   fileLabel = document.getElementById("file-label"), status = document.getElementById("upload-status");
 fileInput.addEventListener("change", () => { fileLabel.textContent = fileInput.files[0]?.name || "选择本地照片"; });
 
+/* ---------- collapsible upload panel ---------- */
+// Phones: starts collapsed and opens as a bottom sheet. Desktop: remembers the last choice in this browser.
+const manager = document.getElementById("gallery-manager");
+const managerOpen = document.getElementById("manager-open");
+const managerClose = document.getElementById("manager-close");
+const PANEL_KEY = "lulu-dengdeng-upload-panel";
+const isPhone = () => matchMedia("(max-width:760px)").matches;
+
+function setPanel(open, { remember = true, focus = false } = {}) {
+  document.body.classList.toggle("manager-collapsed", !open);
+  managerOpen.setAttribute("aria-expanded", String(open));
+  managerClose.setAttribute("aria-expanded", String(open));
+  if (remember && !isPhone()) {
+    try { localStorage.setItem(PANEL_KEY, open ? "open" : "closed"); } catch {}
+  }
+  if (focus) (open ? managerClose : managerOpen).focus();
+}
+
+let savedPanel = null;
+try { savedPanel = localStorage.getItem(PANEL_KEY); } catch {}
+setPanel(!isPhone() && savedPanel !== "closed", { remember: false });
+
+managerOpen.addEventListener("click", () => setPanel(true, { focus: true }));
+managerClose.addEventListener("click", () => setPanel(false, { focus: true }));
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && isPhone() && !document.body.classList.contains("manager-collapsed")) setPanel(false, { focus: true });
+});
+// On phones, tapping the dimmed photos behind the sheet closes it.
+document.addEventListener("click", event => {
+  if (!isPhone() || document.body.classList.contains("manager-collapsed")) return;
+  if (!manager.contains(event.target) && !managerOpen.contains(event.target)) setPanel(false);
+});
+
 function setUploadAvailability() {
   form.querySelector("button").disabled = !photoServiceOnline;
   status.textContent = photoServiceOnline ? "" : "照片服务暂时连不上，现在只能浏览照片。";
