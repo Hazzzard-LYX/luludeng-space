@@ -6,6 +6,9 @@
   const MAX_ZOOM = 9;
   const CITY_ZOOM = 7;
   const SNAP_PIXELS = 28;
+  // Bump when geo/* or this file changes, so browsers skip GitHub Pages' 10-minute cache.
+  const ASSET_VERSION = "20261123b";
+  let moreCitiesState = "waiting"; // waiting → loading → ready | failed
 
   const stage = document.getElementById("offline-map-stage");
   const modeLabel = document.getElementById("map-mode");
@@ -35,7 +38,8 @@
   function loadMoreCities() {
     return new Promise(resolve => {
       const script = document.createElement("script");
-      script.src = "geo/cities-more.js";
+      moreCitiesState = "loading";
+      script.src = `geo/cities-more.js?v=${ASSET_VERSION}`;
       script.async = true;
       script.onload = () => {
         const data = window.LULU_CITIES_MORE;
@@ -45,9 +49,10 @@
           });
         }
         delete window.LULU_CITIES_MORE;
+        moreCitiesState = "ready";
         resolve(true);
       };
-      script.onerror = () => resolve(false);
+      script.onerror = () => { moreCitiesState = "failed"; resolve(false); };
       document.head.append(script);
     });
   }
@@ -93,17 +98,42 @@
 
   /* ---------- base map ---------- */
 
+  // Outlines that cross the 180° line (Russia's far east, Fiji...) jump from +180 to -180 between
+  // two points, which Leaflet draws as a band across the whole map. Shift those points by 360°
+  // so each ring stays continuous. Antarctica wraps the whole globe on purpose, so it is left alone.
+  function unwrapRing(ring) {
+    let offset = 0;
+    return ring.map(([lng, lat], index) => {
+      if (index > 0) {
+        const previous = ring[index - 1][0];
+        if (lng - previous > 180) offset -= 360;
+        else if (previous - lng > 180) offset += 360;
+      }
+      return [lng + offset, lat];
+    });
+  }
+
+  function unwrapDateLine(feature) {
+    if (String(feature.id) === "010" || !feature.geometry) return feature;
+    const { type, coordinates } = feature.geometry;
+    if (type === "Polygon") feature.geometry.coordinates = coordinates.map(unwrapRing);
+    if (type === "MultiPolygon") feature.geometry.coordinates = coordinates.map(polygon => polygon.map(unwrapRing));
+    return feature;
+  }
+
   async function loadBaseMap() {
     try {
       const [world, china] = await Promise.all([
-        fetch("geo/world-50m.json").then(response => response.json()),
-        fetch("geo/china.json").then(response => response.json())
+        fetch(`geo/world-50m.json?v=${ASSET_VERSION}`).then(response => response.json()),
+        fetch(`geo/china.json?v=${ASSET_VERSION}`).then(response => response.json())
       ]);
 
       // China, Taiwan, Hong Kong and Macao come from the more detailed DataV outline instead.
       const replacedByChina = new Set(["156", "158", "344", "446"]);
       const countries = topojson.feature(world, world.objects.countries);
-      countries.features = countries.features.filter(feature => !replacedByChina.has(String(feature.id)));
+      countries.features = countries.features
+        .filter(feature => !replacedByChina.has(String(feature.id)))
+        .map(unwrapDateLine);
 
       L.geoJSON(countries, {
         pane: "land",
@@ -457,7 +487,10 @@
       searchResults.append(item);
     });
     if (!list.length && searchInput.value.trim()) {
-      searchResults.append(element("li", "empty", "没有找到这个城市，可以直接在地图上点击位置"));
+      const message = moreCitiesState === "ready" || moreCitiesState === "failed"
+        ? "没有找到这个城市，可以试试英文名，或直接在地图上点击位置"
+        : "小城市数据还在加载，请稍候…";
+      searchResults.append(element("li", "empty", message));
     }
     setResultsOpen(Boolean(searchInput.value.trim()));
   }
