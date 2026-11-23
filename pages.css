@@ -42,3 +42,34 @@
 .login-access-button b{height:50px;line-height:50px;background:#748d67;color:#fff;font-size:20px;font-weight:400;text-align:center;transition:.2s}
 .login-access-button:hover b{background:#536d4c}
 .login-access-button:disabled{cursor:wait;opacity:.6}
+
+/* Vector map: city search, labels and popups */
+.city-search{position:relative;margin-top:22px}
+.city-search label{display:block;font:600 8px "Cormorant Garamond",serif;letter-spacing:.2em;color:#84927d;margin-bottom:7px}
+.city-search input{width:100%;height:40px;border:1px solid #7385683d;background:#fffdf6;padding:0 12px;font:inherit;font-size:12px;color:#3f5440;outline:0;border-radius:0;-webkit-appearance:none;appearance:none}
+.city-search input:focus{border-color:#728963;box-shadow:0 0 0 3px #91aa7826}
+.city-search input::placeholder{color:#a3ae9b}
+.city-results{position:absolute;z-index:1200;left:0;right:0;top:100%;margin:4px 0 0;padding:4px 0;list-style:none;background:#fffdf6;border:1px solid #7385683d;box-shadow:0 12px 30px #44533c30;max-height:320px;overflow:auto}
+.city-results li{display:flex;align-items:baseline;gap:8px;padding:9px 12px;cursor:pointer;font-size:12px;color:#3f5440}
+.city-results li span{font-size:10px;color:#8a967f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.city-results li.active,.city-results li:hover{background:#eef2e4}
+.city-results li.empty{cursor:default;color:#8a967f;font-size:10px;line-height:1.6}
+.city-results li.empty:hover{background:none}
+.leaflet-tooltip.city-label{background:none;border:0;box-shadow:none;padding:0;margin:0;font-size:10px;line-height:1;color:#5c6f55;text-shadow:0 0 2px #f4f2e6,0 0 2px #f4f2e6,0 0 3px #f4f2e6;white-space:nowrap}
+.leaflet-tooltip.city-label::before{display:none}
+.leaflet-tooltip.city-label.rank-1{font-size:11px;font-weight:600;color:#465c40}
+.leaflet-tooltip.city-label.rank-3{font-size:9px;color:#728367}
+.city-popup span{display:block;font-size:10px;color:#7d8a75;margin-bottom:10px}
+.city-popup-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.city-popup-actions button{border:0;color:#fff;padding:7px 10px;font:inherit;font-size:10px;cursor:pointer}
+.city-popup-actions .footprint{background:#728963}
+.city-popup-actions .footprint:hover{background:#526b48}
+.city-popup-actions .wish{background:#b6534d}
+.city-popup-actions .wish:hover{background:#913f3b}
+.legend-city{display:inline-block;width:7px;height:7px;border-radius:50%;background:#5f7653;box-shadow:0 0 0 1.5px #f8f6ec}
+.offline-map-stage #offline-map{background:#dce6d9}
+.offline-map-stage .leaflet-container{cursor:grab}
+.offline-map-stage.adding .leaflet-container{cursor:crosshair}
+.pending-guide{margin-top:18px}
+@media(max-width:760px){.city-search{margin-top:12px}.city-results{max-height:240px}}
+@media(max-width:760px){.offline-map-stage{height:min(72vh,560px)}.offline-map-stage .map-mode{top:auto;bottom:10px;left:10px;transform:none;max-width:62%;white-space:normal;line-height:1.5}}
