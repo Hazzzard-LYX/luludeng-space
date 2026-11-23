@@ -10,6 +10,7 @@ const ACCESS_CERTS_TTL_MS = 60 * 60 * 1000;
 const MAX_AUTHOR_LENGTH = 50;
 const MAX_CONTENT_LENGTH = 500;
 const MAX_MOOD_LENGTH = 32;
+const MAX_TITLE_LENGTH = 30;
 const MAX_BODY_LENGTH = 4096;
 const MAX_PHOTO_BYTES = 25 * 1024 * 1024;
 const MAX_PLACE_LENGTH = 50;
@@ -219,7 +220,7 @@ function jsonBodyError(request, env, error) {
 
 async function listMessages(request, env) {
   const result = await env.DB.prepare(`
-    SELECT id, author, content, created_at, mood
+    SELECT id, author, content, created_at, mood, title
     FROM messages
     WHERE visible = 1
     ORDER BY created_at ASC, id ASC
@@ -239,7 +240,11 @@ async function createMessage(request, env) {
   const author = cleanString(body.author);
   const content = cleanString(body.content);
   const mood = body.mood == null ? null : cleanString(body.mood);
+  const title = body.title == null ? "" : cleanString(body.title);
 
+  if (title.length > MAX_TITLE_LENGTH) {
+    return json(request, env, { error: `主题最多 ${MAX_TITLE_LENGTH} 个字符` }, 400);
+  }
   if (!author || author.length > MAX_AUTHOR_LENGTH) {
     return json(request, env, { error: `author 长度必须为 1-${MAX_AUTHOR_LENGTH} 个字符` }, 400);
   }
@@ -255,18 +260,20 @@ async function createMessage(request, env) {
     author,
     content,
     created_at: new Date().toISOString(),
-    mood: mood || null
+    mood: mood || null,
+    title: title || null
   };
 
   await env.DB.prepare(`
-    INSERT INTO messages (id, author, content, created_at, mood, visible)
-    VALUES (?1, ?2, ?3, ?4, ?5, 1)
+    INSERT INTO messages (id, author, content, created_at, mood, title, visible)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1)
   `).bind(
     message.id,
     message.author,
     message.content,
     message.created_at,
-    message.mood
+    message.mood,
+    message.title
   ).run();
 
   return json(request, env, { ok: true, message }, 201);

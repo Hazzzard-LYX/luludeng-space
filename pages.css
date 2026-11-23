@@ -96,3 +96,8 @@
 .us-loop-page:not(.manager-collapsed) .stream-counter{display:none}
 }
 @media(prefers-reduced-motion:reduce){.us-loop-page .gallery-manager{animation:none}}
+
+/* Home page: keep the decorative circle (.matcha-shell::after) from widening the page on phones,
+   which pushed the fixed message board and its button past the right edge. */
+.matcha-shell{overflow-x:clip}
+@media(max-width:760px){.matcha-home{overflow-x:hidden}}

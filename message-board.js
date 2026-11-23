@@ -1,3 +1,8 @@
+// Message board notebook. Views (notebook[data-view]):
+//   home    – choose 写留言 or 查看留言 (shown first when the board opens)
+//   toc     – contents: number, date and topic of every message; click to jump
+//   reading – one page at a time, with page turning
+//   compose – writing a new message (optional topic + text)
 const boardTab = document.getElementById("message-board-tab");
 const board = document.getElementById("message-board");
 const notebook = board.querySelector(".notebook");
@@ -10,6 +15,7 @@ const messageList = document.getElementById("message-list");
 const messagesApiUrl = window.LULU_API.url("/api/messages");
 const messageAuthor = String(window.LULU_MESSAGE_AUTHOR || "噜噜 & 噔噔").trim();
 const messageMood = String(window.LULU_MESSAGE_MOOD || "love").trim();
+const MAX_TITLE_LENGTH = 30;
 
 let messages = [];
 let readingPages = [];
@@ -17,107 +23,150 @@ let currentPage = 0;
 let composeTextareas = [messageText];
 let currentComposePage = 0;
 let isTurning = false;
+let view = "home";
+let composeReturnView = "home";
+
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
+}
 
 function normalizeMessage(message) {
   return {
     ...message,
+    title: typeof message.title === "string" ? message.title.trim() : "",
     text: typeof message.content === "string" ? message.content : String(message.text || ""),
     createdAt: message.created_at || message.createdAt || ""
   };
 }
 
-const composeHeading = document.createElement("div");
-composeHeading.className = "compose-heading";
-composeHeading.innerHTML = `
-  <button type="button" aria-label="返回上一页">← 返回</button>
-  <span>NEW PAGE · 写给你</span>
-`;
+/* ---------- home view ---------- */
+
+const homeView = element("section", "board-home");
+homeView.setAttribute("aria-label", "留言板目录入口");
+const writeOption = element("button", "home-option write");
+writeOption.type = "button";
+writeOption.append(element("small", "", "WRITE"), element("b", "", "写留言"), element("span", "", "翻到新的一页，写给你"), element("i", "", "→"));
+const readOption = element("button", "home-option read");
+readOption.type = "button";
+const readSummary = element("span", "", "正在翻开笔记本……");
+readOption.append(element("small", "", "READ"), element("b", "", "查看留言"), readSummary, element("i", "", "→"));
+homeView.append(writeOption, readOption);
+notebook.append(homeView);
+
+/* ---------- contents view ---------- */
+
+const tocView = element("section", "board-toc");
+tocView.setAttribute("aria-label", "留言目录");
+const tocHead = element("div", "board-subhead");
+const tocBack = element("button", "", "← 返回");
+tocBack.type = "button";
+tocHead.append(tocBack, element("span", "", "CONTENTS · 目录"));
+const tocColumns = element("div", "toc-columns");
+tocColumns.append(element("span", "", "NO."), element("span", "", "日期"), element("span", "", "主题"));
+const tocList = element("ol", "toc-list");
+tocView.append(tocHead, tocColumns, tocList);
+notebook.append(tocView);
+
+/* ---------- compose form additions ---------- */
+
+const composeHeading = element("div", "compose-heading");
+const composeBackButton = element("button", "", "← 返回");
+composeBackButton.type = "button";
+composeBackButton.setAttribute("aria-label", "返回上一页");
+composeHeading.append(composeBackButton, element("span", "", "NEW PAGE · 写给你"));
 messageForm.prepend(composeHeading);
 
-const composePages = document.createElement("div");
-composePages.className = "compose-pages";
+const titleLabel = element("label", "compose-title");
+titleLabel.htmlFor = "message-title";
+titleLabel.append(element("span", "", "主题"));
+const titleInput = element("input");
+titleInput.id = "message-title";
+titleInput.type = "text";
+titleInput.maxLength = MAX_TITLE_LENGTH;
+titleInput.placeholder = "可以不写";
+titleInput.autocomplete = "off";
+titleLabel.append(titleInput);
+composeHeading.after(titleLabel);
+
+const composePages = element("div", "compose-pages");
 messageText.before(composePages);
 messageText.classList.add("compose-text-page", "active");
 composePages.append(messageText);
 
-const composeMeasure = document.createElement("textarea");
-composeMeasure.className = "compose-text-page compose-measure";
+const composeMeasure = element("textarea", "compose-text-page compose-measure");
 composeMeasure.tabIndex = -1;
 composeMeasure.setAttribute("aria-hidden", "true");
 composePages.append(composeMeasure);
 
-const composePagination = document.createElement("nav");
-composePagination.className = "compose-pagination";
+const composePagination = element("nav", "compose-pagination");
 composePagination.setAttribute("aria-label", "书写页翻页");
-composePagination.innerHTML = `
-  <button type="button" class="compose-prev" aria-label="上一张书写页">← 上一页</button>
-  <span class="compose-page-number" aria-live="polite">新页 1 / 1</span>
-  <button type="button" class="compose-next" aria-label="下一张书写页">下一页 →</button>
-`;
+const composePreviousButton = element("button", "compose-prev", "← 上一页");
+const composePageNumber = element("span", "compose-page-number", "新页 1 / 1");
+const composeNextButton = element("button", "compose-next", "下一页 →");
+composePreviousButton.type = composeNextButton.type = "button";
+composePreviousButton.setAttribute("aria-label", "上一张书写页");
+composeNextButton.setAttribute("aria-label", "下一张书写页");
+composePageNumber.setAttribute("aria-live", "polite");
+composePagination.append(composePreviousButton, composePageNumber, composeNextButton);
 composePages.after(composePagination);
 
-const messagePage = document.createElement("div");
-messagePage.className = "message-page";
-messageList.before(messagePage);
-messagePage.append(messageList);
+/* ---------- reading view ---------- */
 
-const pagination = document.createElement("nav");
-pagination.className = "message-pagination";
+const messagePage = element("div", "message-page");
+messageList.before(messagePage);
+
+const readingHead = element("div", "board-subhead reading-head");
+const readingBack = element("button", "", "← 目录");
+readingBack.type = "button";
+const readingTitle = element("span", "reading-title", "");
+const readingWrite = element("button", "", "写留言 →");
+readingWrite.type = "button";
+readingHead.append(readingBack, readingTitle, readingWrite);
+messagePage.append(readingHead, messageList);
+
+const pagination = element("nav", "message-pagination");
 pagination.setAttribute("aria-label", "留言翻页");
-pagination.innerHTML = `
-  <button id="message-prev" type="button" aria-label="翻到上一页">← 上一页</button>
-  <span id="message-page-number" aria-live="polite">第 1 / 1 页</span>
-  <button id="message-next" type="button" aria-label="翻到下一页">下一页 →</button>
-`;
+const previousButton = element("button", "", "← 上一页");
+const pageNumber = element("span", "", "第 1 / 1 页");
+const nextButton = element("button", "", "下一页 →");
+previousButton.type = nextButton.type = "button";
+previousButton.setAttribute("aria-label", "翻到上一页");
+nextButton.setAttribute("aria-label", "翻到下一页");
+pageNumber.setAttribute("aria-live", "polite");
+pagination.append(previousButton, pageNumber, nextButton);
 messagePage.append(pagination);
 
-const readingMeasure = document.createElement("p");
-readingMeasure.className = "reading-page-measure";
+const readingMeasure = element("p", "reading-page-measure");
 readingMeasure.setAttribute("aria-hidden", "true");
 notebook.append(readingMeasure);
 
-const composeLauncher = document.createElement("section");
-composeLauncher.className = "compose-launcher";
-composeLauncher.innerHTML = `
-  <span>NEXT PAGE</span>
-  <button type="button">翻到新一页写留言&nbsp; →</button>
-`;
-notebook.append(composeLauncher);
-
-const previousButton = document.getElementById("message-prev");
-const nextButton = document.getElementById("message-next");
-const pageNumber = document.getElementById("message-page-number");
-const composeButton = composeLauncher.querySelector("button");
-const composeBackButton = composeHeading.querySelector("button");
-const composePreviousButton = composePagination.querySelector(".compose-prev");
-const composeNextButton = composePagination.querySelector(".compose-next");
-const composePageNumber = composePagination.querySelector(".compose-page-number");
+/* ---------- helpers ---------- */
 
 function orderedMessages() {
-  return messages.slice().sort((a, b) => {
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  });
+  return messages.slice().sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 }
 
 function formatTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(date);
+  return new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+function formatDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = number => String(number).padStart(2, "0");
+  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
 }
 
 function splitByMeasuredHeight(text, measure, maxHeight) {
   if (!text) return [""];
   if (!maxHeight || maxHeight < 40) {
     const fallbackSize = 150;
-    return Array.from({ length: Math.ceil(text.length / fallbackSize) }, (_, index) => {
-      return text.slice(index * fallbackSize, (index + 1) * fallbackSize);
-    });
+    return Array.from({ length: Math.ceil(text.length / fallbackSize) }, (_, index) => text.slice(index * fallbackSize, (index + 1) * fallbackSize));
   }
 
   const pages = [];
@@ -126,13 +175,11 @@ function splitByMeasuredHeight(text, measure, maxHeight) {
     let low = start + 1;
     let high = text.length;
     let best = start + 1;
-
     while (low <= high) {
       const middle = Math.floor((low + high) / 2);
       const candidate = text.slice(start, middle);
       if (measure instanceof HTMLTextAreaElement) measure.value = candidate;
       else measure.textContent = candidate;
-
       if (measure.scrollHeight <= maxHeight + 1) {
         best = middle;
         low = middle + 1;
@@ -140,11 +187,80 @@ function splitByMeasuredHeight(text, measure, maxHeight) {
         high = middle - 1;
       }
     }
-
     pages.push(text.slice(start, best));
     start = best;
   }
   return pages;
+}
+
+/* ---------- views ---------- */
+
+function setView(next) {
+  view = next;
+  notebook.dataset.view = next;
+  notebook.classList.toggle("composing", next === "compose");
+}
+
+function renderHome() {
+  const ordered = orderedMessages();
+  if (!ordered.length) {
+    readSummary.textContent = "还没有写过留言";
+    return;
+  }
+  readSummary.textContent = `共 ${ordered.length} 篇 · 最近一篇 ${formatDate(ordered[ordered.length - 1].createdAt)}`;
+}
+
+function renderToc() {
+  tocList.innerHTML = "";
+  const ordered = orderedMessages();
+  if (!ordered.length) {
+    tocList.append(element("li", "toc-empty", "还没有写过留言，下一页留给我们。"));
+    return;
+  }
+  ordered.forEach((message, index) => {
+    const item = element("li");
+    const entry = element("button", "toc-entry");
+    entry.type = "button";
+    const time = element("time", "", formatDate(message.createdAt));
+    time.dateTime = message.createdAt;
+    entry.append(element("span", "toc-no", String(index + 1).padStart(2, "0")), time, element("span", "toc-title", message.title));
+    entry.setAttribute("aria-label", `第 ${index + 1} 篇，${formatDate(message.createdAt)}${message.title ? `，${message.title}` : ""}`);
+    entry.addEventListener("click", () => openMessage(message.id));
+    item.append(entry);
+    tocList.append(item);
+  });
+}
+
+function showHome() {
+  renderHome();
+  setView("home");
+}
+
+function showToc() {
+  renderToc();
+  setView("toc");
+  tocList.scrollTop = 0;
+}
+
+// Reading pages are measured against the visible page, so (re)build them once the reading view is shown.
+function showReading({ messageId = null, latest = false, animate = null } = {}) {
+  setView("reading");
+  requestAnimationFrame(() => {
+    rebuildReadingPages(latest);
+    if (messageId) {
+      const index = readingPages.findIndex(page => page.message.id === messageId && page.fragmentIndex === 0);
+      if (index >= 0) currentPage = index;
+      renderMessages();
+    }
+    if (animate) {
+      messagePage.classList.add(animate);
+      setTimeout(() => messagePage.classList.remove(animate), 240);
+    }
+  });
+}
+
+function openMessage(id) {
+  showReading({ messageId: id, animate: "turn-in-next" });
 }
 
 function rebuildReadingPages(showLatest = false) {
@@ -156,33 +272,21 @@ function rebuildReadingPages(showLatest = false) {
   const textHeight = Math.max(120, messageList.clientHeight - 88);
   readingMeasure.style.width = `${textWidth}px`;
 
-  orderedMessages().forEach(message => {
+  orderedMessages().forEach((message, messageIndex) => {
     const fragments = splitByMeasuredHeight(message.text, readingMeasure, textHeight);
     fragments.forEach((fragment, fragmentIndex) => {
-      readingPages.push({
-        message,
-        text: fragment,
-        fragmentIndex,
-        fragmentCount: fragments.length
-      });
+      readingPages.push({ message, messageIndex, text: fragment, fragmentIndex, fragmentCount: fragments.length });
     });
   });
 
-  if (showLatest) currentPage = Math.max(0, readingPages.length - 1);
-  else if (oldLength) currentPage = Math.min(oldPage, Math.max(0, readingPages.length - 1));
-  renderMessages();
-}
-
-function setOpen(open) {
-  board.classList.toggle("open", open);
-  board.setAttribute("aria-hidden", String(!open));
-  boardTab.setAttribute("aria-expanded", String(open));
-
-  if (open) {
-    notebook.classList.remove("composing");
-    messageForm.classList.remove("compose-in", "compose-out");
-    requestAnimationFrame(() => rebuildReadingPages(true));
+  if (showLatest) {
+    // Open at the first page of the newest message, not in the middle of it.
+    const last = readingPages[readingPages.length - 1];
+    currentPage = last ? readingPages.findIndex(page => page.message === last.message) : 0;
+  } else if (oldLength) {
+    currentPage = Math.min(oldPage, Math.max(0, readingPages.length - 1));
   }
+  renderMessages();
 }
 
 function renderMessages() {
@@ -192,27 +296,20 @@ function renderMessages() {
 
   if (!readingPages.length) {
     messageList.innerHTML = '<div class="message-empty"><b>还没有写过留言。</b><br>下一页，留给我们。</div>';
+    readingTitle.textContent = "";
   } else {
     const page = readingPages[currentPage];
-    const note = document.createElement("article");
-    note.className = "featured-message";
+    const number = `第 ${page.messageIndex + 1} 篇`;
+    readingTitle.textContent = page.message.title ? `${number} · ${page.message.title}` : number;
 
-    const text = document.createElement("p");
-    text.textContent = page.text;
-
-    const footer = document.createElement("footer");
-    const time = document.createElement("time");
-    const continuation = page.fragmentCount > 1
-      ? ` · ${page.fragmentIndex + 1}/${page.fragmentCount}`
-      : "";
-    time.textContent = `${formatTime(page.message.createdAt)}${continuation}`;
-
-    const deleteButton = document.createElement("button");
+    const note = element("article", "featured-message");
+    const text = element("p", "", page.text);
+    const footer = element("footer");
+    const time = element("time", "", `${formatTime(page.message.createdAt)}${page.fragmentCount > 1 ? ` · ${page.fragmentIndex + 1}/${page.fragmentCount}` : ""}`);
+    const deleteButton = element("button", "", "×");
     deleteButton.type = "button";
     deleteButton.setAttribute("aria-label", "删除这条留言");
-    deleteButton.textContent = "×";
     deleteButton.addEventListener("click", () => deleteMessage(page.message.id));
-
     footer.append(time, deleteButton);
     note.append(text, footer);
     messageList.append(note);
@@ -238,7 +335,6 @@ function turnPage(direction) {
     messagePage.classList.remove(outClass);
     void messagePage.offsetWidth;
     messagePage.classList.add(inClass);
-
     setTimeout(() => {
       messagePage.classList.remove(inClass);
       isTurning = false;
@@ -246,21 +342,30 @@ function turnPage(direction) {
   }, 180);
 }
 
+function setOpen(open) {
+  board.classList.toggle("open", open);
+  board.setAttribute("aria-hidden", String(!open));
+  boardTab.setAttribute("aria-expanded", String(open));
+  if (open) {
+    messageForm.classList.remove("compose-in", "compose-out");
+    showHome();
+  }
+}
+
+/* ---------- writing ---------- */
+
 function getComposeText() {
   return composeTextareas.map(textarea => textarea.value).join("");
 }
 
 function getGlobalCaret(textarea) {
   const index = composeTextareas.indexOf(textarea);
-  const precedingLength = composeTextareas
-    .slice(0, Math.max(0, index))
-    .reduce((total, item) => total + item.value.length, 0);
+  const precedingLength = composeTextareas.slice(0, Math.max(0, index)).reduce((total, item) => total + item.value.length, 0);
   return precedingLength + (textarea.selectionStart || 0);
 }
 
 function createComposeTextarea() {
-  const textarea = document.createElement("textarea");
-  textarea.className = "compose-text-page";
+  const textarea = element("textarea", "compose-text-page");
   textarea.maxLength = 500;
   textarea.placeholder = "继续写在下一页……";
   composePages.insertBefore(textarea, composeMeasure);
@@ -270,40 +375,27 @@ function createComposeTextarea() {
 
 function showComposePage(index, focus = false, caret = null) {
   currentComposePage = Math.max(0, Math.min(index, composeTextareas.length - 1));
-  composeTextareas.forEach((textarea, pageIndex) => {
-    textarea.classList.toggle("active", pageIndex === currentComposePage);
-  });
-
+  composeTextareas.forEach((textarea, pageIndex) => textarea.classList.toggle("active", pageIndex === currentComposePage));
   composePageNumber.textContent = `新页 ${currentComposePage + 1} / ${composeTextareas.length}`;
   composePreviousButton.disabled = currentComposePage === 0;
   composeNextButton.disabled = currentComposePage === composeTextareas.length - 1;
 
   if (focus) {
-    requestAnimationFrame(() => {
-      const textarea = composeTextareas[currentComposePage];
-      textarea.focus();
-      const position = caret === null ? textarea.value.length : Math.min(caret, textarea.value.length);
-      textarea.setSelectionRange(position, position);
-    });
+    const textarea = composeTextareas[currentComposePage];
+    textarea.focus();
+    const position = caret === null ? textarea.value.length : Math.min(caret, textarea.value.length);
+    textarea.setSelectionRange(position, position);
   }
 }
 
 function reflowComposeText(text, globalCaret = text.length, focus = false) {
   const previousComposePage = currentComposePage;
   const limitedText = text.slice(0, 500);
-  const availableHeight = composeMeasure.clientHeight;
-  const fragments = splitByMeasuredHeight(limitedText, composeMeasure, availableHeight);
+  const fragments = splitByMeasuredHeight(limitedText, composeMeasure, composeMeasure.clientHeight);
 
-  while (composeTextareas.length < fragments.length) {
-    composeTextareas.push(createComposeTextarea());
-  }
-  while (composeTextareas.length > fragments.length) {
-    composeTextareas.pop().remove();
-  }
-
-  composeTextareas.forEach((textarea, index) => {
-    textarea.value = fragments[index] || "";
-  });
+  while (composeTextareas.length < fragments.length) composeTextareas.push(createComposeTextarea());
+  while (composeTextareas.length > fragments.length) composeTextareas.pop().remove();
+  composeTextareas.forEach((textarea, index) => { textarea.value = fragments[index] || ""; });
 
   const caret = Math.min(globalCaret, limitedText.length);
   let accumulated = 0;
@@ -330,8 +422,7 @@ function reflowComposeText(text, globalCaret = text.length, focus = false) {
 
 function handleComposeInput(event) {
   const textarea = event.currentTarget;
-  const caret = getGlobalCaret(textarea);
-  reflowComposeText(getComposeText(), caret, true);
+  reflowComposeText(getComposeText(), getGlobalCaret(textarea), true);
 }
 
 function bindComposeTextarea(textarea) {
@@ -347,20 +438,17 @@ function bindComposeTextarea(textarea) {
 
 function beginCompose() {
   if (isTurning) return;
+  composeReturnView = view === "compose" ? "home" : view;
   isTurning = true;
-  messagePage.classList.add("turn-out-next");
-  composeLauncher.classList.add("turn-out-next");
-
-  setTimeout(() => {
-    messagePage.classList.remove("turn-out-next");
-    composeLauncher.classList.remove("turn-out-next");
-    notebook.classList.add("composing");
-    messageForm.classList.add("compose-in");
-    messageStatus.textContent = "";
-    void messageForm.offsetWidth;
-    reflowComposeText(getComposeText(), getComposeText().length, true);
+  setView("compose");
+  messageStatus.textContent = "";
+  messageForm.classList.remove("compose-out");
+  messageForm.classList.add("compose-in");
+  requestAnimationFrame(() => {
+    reflowComposeText(getComposeText(), getComposeText().length, false);
+    titleInput.focus();
     isTurning = false;
-  }, 180);
+  });
 }
 
 function finishCompose(saved) {
@@ -368,73 +456,86 @@ function finishCompose(saved) {
   isTurning = true;
   messageForm.classList.remove("compose-in");
   messageForm.classList.add("compose-out");
-
   setTimeout(() => {
-    notebook.classList.remove("composing");
     messageForm.classList.remove("compose-out");
-    rebuildReadingPages(true);
-    messagePage.classList.add(saved ? "turn-in-next" : "turn-in-prev");
-    composeLauncher.classList.add(saved ? "turn-in-next" : "turn-in-prev");
-
-    setTimeout(() => {
-      messagePage.classList.remove("turn-in-next", "turn-in-prev");
-      composeLauncher.classList.remove("turn-in-next", "turn-in-prev");
-      isTurning = false;
-    }, 240);
+    isTurning = false;
+    if (saved) showReading({ latest: true, animate: "turn-in-next" });
+    else if (composeReturnView === "reading") showReading({ animate: "turn-in-prev" });
+    else if (composeReturnView === "toc") showToc();
+    else showHome();
   }, 180);
 }
+
+/* ---------- data ---------- */
 
 async function loadMessages() {
   try {
     const response = await window.LULU_API.request(messagesApiUrl, { cache: "no-store" });
     if (response.ok) {
       const result = await response.json();
-      messages = (Array.isArray(result.messages) ? result.messages : [])
-        .map(normalizeMessage)
-        .filter(message => message.id && message.text);
-      rebuildReadingPages(true);
+      messages = (Array.isArray(result.messages) ? result.messages : []).map(normalizeMessage).filter(message => message.id && message.text);
+      refreshViews();
       return true;
     }
   } catch {}
 
-  messages = (Array.isArray(window.LULU_MESSAGES) ? window.LULU_MESSAGES : [])
-    .map(normalizeMessage)
-    .filter(message => message.id && message.text);
-  rebuildReadingPages(true);
+  messages = (Array.isArray(window.LULU_MESSAGES) ? window.LULU_MESSAGES : []).map(normalizeMessage).filter(message => message.id && message.text);
+  refreshViews();
   return false;
+}
+
+function refreshViews() {
+  renderHome();
+  if (view === "toc") renderToc();
+  if (view === "reading") rebuildReadingPages(false);
 }
 
 async function deleteMessage(id) {
   if (!confirm("确定擦掉这条留言吗？")) return;
-
   try {
     const response = await window.LULU_API.request(`${messagesApiUrl}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     if (!response.ok) throw new Error();
     messages = messages.filter(message => message.id !== id);
-    rebuildReadingPages(true);
+    renderHome();
+    if (messages.length) rebuildReadingPages(false);
+    else showToc();
   } catch {
-    composeLauncher.querySelector("span").textContent = "删除失败，请稍后再试";
+    readingTitle.textContent = "删除失败，请稍后再试";
   }
 }
+
+/* ---------- events ---------- */
 
 bindComposeTextarea(messageText);
 boardTab.addEventListener("click", () => setOpen(!board.classList.contains("open")));
 closeButton.addEventListener("click", () => setOpen(false));
+writeOption.addEventListener("click", beginCompose);
+readOption.addEventListener("click", showToc);
+tocBack.addEventListener("click", showHome);
+readingBack.addEventListener("click", showToc);
+readingWrite.addEventListener("click", beginCompose);
 previousButton.addEventListener("click", () => turnPage(-1));
 nextButton.addEventListener("click", () => turnPage(1));
-composeButton.addEventListener("click", beginCompose);
 composeBackButton.addEventListener("click", () => finishCompose(false));
 composePreviousButton.addEventListener("click", () => showComposePage(currentComposePage - 1, true));
 composeNextButton.addEventListener("click", () => showComposePage(currentComposePage + 1, true));
+titleInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    showComposePage(0, true, 0);
+  }
+});
 
 document.addEventListener("keydown", event => {
+  if (!board.classList.contains("open")) return;
   if (event.key === "Escape") {
-    if (notebook.classList.contains("composing")) finishCompose(false);
+    if (view === "compose") finishCompose(false);
+    else if (view === "reading") showToc();
+    else if (view === "toc") showHome();
     else setOpen(false);
     return;
   }
-
-  if (!board.classList.contains("open") || notebook.classList.contains("composing")) return;
+  if (view !== "reading") return;
   if (event.key === "ArrowLeft") turnPage(-1);
   if (event.key === "ArrowRight") turnPage(1);
 });
@@ -443,15 +544,20 @@ let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (!notebook.classList.contains("composing")) rebuildReadingPages(false);
+    if (view === "reading") rebuildReadingPages(false);
   }, 160);
 });
 
 messageForm.addEventListener("submit", async event => {
   event.preventDefault();
   const text = getComposeText().trim();
+  const title = titleInput.value.trim().slice(0, MAX_TITLE_LENGTH);
   const button = messageForm.querySelector('button[type="submit"]');
-  if (!text) return;
+  if (!text) {
+    messageStatus.textContent = "先写下想说的话吧。";
+    showComposePage(0, true);
+    return;
+  }
 
   button.disabled = true;
   messageStatus.textContent = "正在把这句话写进笔记本……";
@@ -460,17 +566,14 @@ messageForm.addEventListener("submit", async event => {
     const response = await window.LULU_API.request(messagesApiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        author: messageAuthor || "我们",
-        content: text,
-        mood: messageMood || null
-      })
+      body: JSON.stringify({ author: messageAuthor || "我们", content: text, mood: messageMood || null, title: title || null })
     });
-    const result = await response.json();
+    const result = await window.LULU_API.readJson(response);
     if (!response.ok) throw new Error(result.error || "保存失败");
 
     const refreshed = await loadMessages();
     if (!refreshed) messages.push(normalizeMessage(result.message));
+    titleInput.value = "";
     reflowComposeText("", 0, false);
     messageStatus.textContent = "写好了。";
     finishCompose(true);
@@ -481,4 +584,5 @@ messageForm.addEventListener("submit", async event => {
   }
 });
 
+setView("home");
 loadMessages();

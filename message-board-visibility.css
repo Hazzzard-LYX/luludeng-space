@@ -489,3 +489,272 @@
     min-height: 175px;
   }
 }
+
+/* ---------- views: home / contents / reading / compose ---------- */
+.notebook > .board-home,
+.notebook > .board-toc,
+.notebook[data-view] > .message-page,
+.notebook > .compose-launcher {
+  display: none;
+}
+
+.notebook[data-view="home"] > .board-home,
+.notebook[data-view="toc"] > .board-toc,
+.notebook[data-view="reading"] > .message-page {
+  display: flex;
+}
+
+.board-home {
+  order: 1;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 26px 8px 8px;
+}
+
+.home-option {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "label arrow" "title arrow" "desc arrow";
+  row-gap: 4px;
+  width: 100%;
+  padding: 22px 8px;
+  border: 0;
+  border-bottom: 1px dashed #77736b;
+  background: transparent;
+  color: #25241f;
+  text-align: left;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.home-option:hover,
+.home-option:focus-visible {
+  background: #6f86631a;
+}
+
+.home-option small {
+  grid-area: label;
+  font: 600 8px "Cormorant Garamond", serif;
+  letter-spacing: .2em;
+  color: #5d5b53;
+}
+
+.home-option b {
+  grid-area: title;
+  font: 600 26px "KaiTi", "STKaiti", cursive;
+  letter-spacing: .06em;
+}
+
+.home-option span {
+  grid-area: desc;
+  font: 500 13px "KaiTi", "STKaiti", cursive;
+  color: #555149;
+}
+
+.home-option i {
+  grid-area: arrow;
+  align-self: center;
+  font-style: normal;
+  font-size: 22px;
+  color: #3a3933;
+  transition: transform .2s;
+}
+
+.home-option:hover i {
+  transform: translateX(4px);
+}
+
+.board-toc {
+  order: 1;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  padding: 20px 8px 6px;
+}
+
+.board-subhead {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2e2d28;
+}
+
+.board-subhead button {
+  border: 0;
+  background: transparent;
+  color: #292823;
+  padding: 5px 0;
+  font: 600 13px "KaiTi", "STKaiti", cursive;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.board-subhead button:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.board-subhead > span {
+  font: 600 8px "Cormorant Garamond", serif;
+  letter-spacing: .18em;
+  color: #5d5b53;
+}
+
+.board-subhead > .reading-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 13px "KaiTi", "STKaiti", cursive;
+  letter-spacing: .04em;
+  color: #3a3933;
+}
+
+.reading-head {
+  margin: 18px 8px 0;
+}
+
+.toc-columns,
+.toc-entry {
+  display: grid;
+  grid-template-columns: 30px 88px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.toc-columns {
+  flex: 0 0 auto;
+  padding: 10px 6px 6px;
+  font: 600 8px "Cormorant Garamond", serif;
+  letter-spacing: .16em;
+  color: #77736b;
+}
+
+.toc-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.toc-entry {
+  align-items: baseline;
+  width: 100%;
+  padding: 12px 6px;
+  border: 0;
+  border-bottom: 1px dotted #9a9589;
+  background: transparent;
+  color: #25241f;
+  text-align: left;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.toc-entry:hover,
+.toc-entry:focus-visible {
+  background: #6f86631a;
+}
+
+.toc-no {
+  font: 600 14px "Cormorant Garamond", serif;
+  color: #6f6b62;
+}
+
+.toc-entry time {
+  font: 600 14px "Cormorant Garamond", serif;
+  letter-spacing: .03em;
+  color: #3a3933;
+}
+
+.toc-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 16px "KaiTi", "STKaiti", cursive;
+}
+
+.toc-empty {
+  padding: 26px 6px;
+  font: 500 15px "KaiTi", "STKaiti", cursive;
+  color: #555149;
+}
+
+.compose-title {
+  display: flex !important;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 14px !important;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #77736b;
+}
+
+.compose-title span {
+  font: 600 14px "KaiTi", "STKaiti", cursive;
+  color: #3a3933;
+  white-space: nowrap;
+}
+
+.compose-title input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 2px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #25241f;
+  font: 500 17px "KaiTi", "STKaiti", cursive;
+}
+
+.compose-title input::placeholder {
+  color: #a39e92;
+}
+
+@media (max-width: 600px) {
+  .home-option {
+    padding: 18px 6px;
+  }
+
+  .home-option b {
+    font-size: 23px;
+  }
+
+  .toc-columns,
+  .toc-entry {
+    grid-template-columns: 24px 80px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .toc-title {
+    font-size: 15px;
+  }
+}
+
+/* Slide the board in with a clip instead of translateX(105%): an off-screen transformed panel
+   widens the page on phones, pushing the board and its tab button past the right edge. */
+.message-board {
+  transform: none;
+  clip-path: inset(0 0 0 100%);
+  visibility: hidden;
+  transition: clip-path .38s cubic-bezier(.22, .75, .3, 1), visibility 0s linear .38s;
+}
+
+.message-board.open {
+  clip-path: inset(0);
+  visibility: visible;
+  transition: clip-path .38s cubic-bezier(.22, .75, .3, 1), visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-board,
+  .message-board.open {
+    transition: none;
+  }
+}
