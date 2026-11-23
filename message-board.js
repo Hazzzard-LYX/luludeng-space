@@ -7,7 +7,7 @@ const messageText = document.getElementById("message-text");
 const messageCount = document.getElementById("message-count");
 const messageStatus = document.getElementById("message-status");
 const messageList = document.getElementById("message-list");
-const messagesApiUrl = "https://luludeng-api.13404211257.workers.dev/api/messages";
+const messagesApiUrl = window.LULU_API.url("/api/messages");
 const messageAuthor = String(window.LULU_MESSAGE_AUTHOR || "噜噜 & 噔噔").trim();
 const messageMood = String(window.LULU_MESSAGE_MOOD || "love").trim();
 
@@ -386,7 +386,7 @@ function finishCompose(saved) {
 
 async function loadMessages() {
   try {
-    const response = await fetch(messagesApiUrl, { cache: "no-store" });
+    const response = await window.LULU_API.request(messagesApiUrl, { cache: "no-store" });
     if (response.ok) {
       const result = await response.json();
       messages = (Array.isArray(result.messages) ? result.messages : [])
@@ -408,12 +408,12 @@ async function deleteMessage(id) {
   if (!confirm("确定擦掉这条留言吗？")) return;
 
   try {
-    const response = await fetch(`${messagesApiUrl}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const response = await window.LULU_API.request(`${messagesApiUrl}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     if (!response.ok) throw new Error();
     messages = messages.filter(message => message.id !== id);
     rebuildReadingPages(true);
   } catch {
-    composeLauncher.querySelector("span").textContent = "删除失败，请通过本地服务打开";
+    composeLauncher.querySelector("span").textContent = "删除失败，请稍后再试";
   }
 }
 
@@ -457,7 +457,7 @@ messageForm.addEventListener("submit", async event => {
   messageStatus.textContent = "正在把这句话写进笔记本……";
 
   try {
-    const response = await fetch(messagesApiUrl, {
+    const response = await window.LULU_API.request(messagesApiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -475,7 +475,7 @@ messageForm.addEventListener("submit", async event => {
     messageStatus.textContent = "写好了。";
     finishCompose(true);
   } catch (error) {
-    messageStatus.textContent = error.message || "当前页面无法保存，请通过本地服务打开。";
+    messageStatus.textContent = error.message || "暂时无法保存，请检查网络后再试。";
   } finally {
     button.disabled = false;
   }

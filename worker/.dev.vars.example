@@ -1,0 +1,4 @@
+# Local development only: copy to worker/.dev.vars (git-ignored).
+# Skips the Cloudflare Access check and lets the local static server call the Worker.
+ACCESS_DISABLED=true
+ALLOWED_ORIGINS=http://127.0.0.1:4173,http://localhost:4173

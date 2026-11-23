@@ -6,5 +6,5 @@
   }
   if (sessionStorage.getItem("lulu-dengdeng-auth") === "granted") return;
   const current = location.pathname.split("/").pop() || "index.html";
-  location.replace("login.html?next=" + encodeURIComponent(current));
+  location.replace("login.html?next=" + encodeURIComponent(current + location.search));
 })();

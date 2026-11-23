@@ -1,12 +1,28 @@
 name = "luludeng-api"
 main = "src/index.js"
 compatibility_date = "2026-05-22"
-workers_dev = true
+
+# The API lives on its own subdomain, protected by Cloudflare Access.
+# The workers.dev address is turned off so nothing can reach the Worker around Access.
+workers_dev = false
+routes = [
+  { pattern = "api.luludeng.space", custom_domain = true }
+]
+
+# Secrets (set with `npx wrangler secret put <NAME> --config=worker/wrangler.toml`, never committed):
+#   ACCESS_TEAM_DOMAIN  e.g. yourteam.cloudflareaccess.com
+#   ACCESS_AUD          the Access application's "Application Audience (AUD) Tag"
+#   ALLOWED_EMAILS      comma-separated emails allowed in, same as the Access policy
+# For local `wrangler dev`, copy .dev.vars.example to .dev.vars instead.
 
 [vars]
-ALLOWED_ORIGINS = "https://luludeng.space,https://luludeng-api.13404211257.workers.dev,http://127.0.0.1:4173,http://localhost:4173"
+ALLOWED_ORIGINS = "https://luludeng.space"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "luludeng-messages"
 database_id = "d8e24a0d-5167-465e-86e9-e47948e69995"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "luludeng-photos"

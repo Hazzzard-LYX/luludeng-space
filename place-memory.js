@@ -1,8 +1,8 @@
 const params=new URLSearchParams(location.search),placeName=(params.get("name")||"我们的地点").trim(),nameElement=document.getElementById("place-name"),description=document.getElementById("place-description"),counter=document.getElementById("place-photo-count"),gallery=document.getElementById("place-gallery");
 const aliasGroups=[["上海","shanghai"],["香港","hongkong","hong kong"],["深圳","shenzhen"]];
 function normalize(value){return String(value||"").toLowerCase().replace(/[\s\-_.,，。/\\]+/g,"")}
-function folderOf(photo){const parts=photo.src.replace(/\\/g,"/").split("/");return parts.length>2?decodeURIComponent(parts[1]):""}
-async function allPhotos(){if(location.protocol.startsWith("http")){try{const response=await fetch("/api/photos",{cache:"no-store"});if(response.ok)return(await response.json()).photos}catch{}}return Array.isArray(window.US_PHOTOS)?window.US_PHOTOS:[]}
+function folderOf(photo){return photo.place||""}
+async function allPhotos(){return(await window.LULU_API.loadPhotos()).photos}
 function matchingFolders(name){const wanted=normalize(name),group=aliasGroups.find(items=>items.some(item=>normalize(item)===wanted));return group||[name]}
 function matchesPlace(photo){const folder=normalize(folderOf(photo));return matchingFolders(placeName).some(target=>folder===normalize(target))}
 function createPhoto(photo,index){const figure=document.createElement("figure"),img=document.createElement("img"),caption=document.createElement("figcaption"),number=document.createElement("span");figure.style.setProperty("--frame-tilt",`${((index*17)%9-4)*.32}deg`);figure.style.setProperty("--frame-lift",`${index%4===1?28:index%4===3?12:0}px`);img.src=photo.src;img.alt=photo.name;img.loading=index<6?"eager":"lazy";img.addEventListener("load",()=>figure.classList.add(img.naturalWidth>img.naturalHeight*1.12?"landscape":"portrait"),{once:true});caption.textContent=photo.name;number.textContent=String(index+1).padStart(2,"0");figure.append(img,caption,number);return figure}
