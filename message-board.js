@@ -16,6 +16,7 @@ const messagesApiUrl = window.LULU_API.url("/api/messages");
 const messageAuthor = String(window.LULU_MESSAGE_AUTHOR || "噜噜 & 噔噔").trim();
 const messageMood = String(window.LULU_MESSAGE_MOOD || "love").trim();
 const MAX_TITLE_LENGTH = 30;
+const MAX_CONTENT_LENGTH = 5000;
 
 let messages = [];
 let readingPages = [];
@@ -93,6 +94,7 @@ composeHeading.after(titleLabel);
 
 const composePages = element("div", "compose-pages");
 messageText.before(composePages);
+messageText.maxLength = MAX_CONTENT_LENGTH;
 messageText.classList.add("compose-text-page", "active");
 composePages.append(messageText);
 
@@ -366,7 +368,7 @@ function getGlobalCaret(textarea) {
 
 function createComposeTextarea() {
   const textarea = element("textarea", "compose-text-page");
-  textarea.maxLength = 500;
+  textarea.maxLength = MAX_CONTENT_LENGTH;
   textarea.placeholder = "继续写在下一页……";
   composePages.insertBefore(textarea, composeMeasure);
   bindComposeTextarea(textarea);
@@ -390,7 +392,7 @@ function showComposePage(index, focus = false, caret = null) {
 
 function reflowComposeText(text, globalCaret = text.length, focus = false) {
   const previousComposePage = currentComposePage;
-  const limitedText = text.slice(0, 500);
+  const limitedText = text.slice(0, MAX_CONTENT_LENGTH);
   const fragments = splitByMeasuredHeight(limitedText, composeMeasure, composeMeasure.clientHeight);
 
   while (composeTextareas.length < fragments.length) composeTextareas.push(createComposeTextarea());
@@ -411,7 +413,7 @@ function reflowComposeText(text, globalCaret = text.length, focus = false) {
     accumulated = end;
   }
 
-  messageCount.textContent = `${limitedText.length} / 500`;
+  messageCount.textContent = `${limitedText.length} / ${MAX_CONTENT_LENGTH}`;
   showComposePage(targetPage, focus, localCaret);
   if (focus && targetPage !== previousComposePage) {
     const activePage = composeTextareas[targetPage];

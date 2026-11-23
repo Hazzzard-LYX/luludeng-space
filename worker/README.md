@@ -35,7 +35,7 @@ Worker 不只依赖 Access 拦截：每个请求都会校验 Access 附带的 `C
 
 - `GET /api/messages`：返回所有 `visible = 1` 的留言，按时间从早到晚排序。
 - `POST /api/messages`：`{"author": "噜噜 & 噔噔", "content": "今天也很喜欢你。", "mood": "love"}`
-  - `author` 1-50 字符，`content` 1-500 字符，`mood` 可选、最多 32 字符
+  - `author` 1-50 字符，`content` 1-5000 字符，`title`（主题）可选、最多 30 字符，`mood` 可选、最多 32 字符
 - `DELETE /api/messages?id=<id>`：软删除（`visible = 0`）。恢复：
   `UPDATE messages SET visible = 1 WHERE id = '<id>';`
 

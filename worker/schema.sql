@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY NOT NULL,
   author TEXT NOT NULL CHECK (length(author) BETWEEN 1 AND 50),
-  content TEXT NOT NULL CHECK (length(content) BETWEEN 1 AND 500),
+  content TEXT NOT NULL CHECK (length(content) BETWEEN 1 AND 5000),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   mood TEXT CHECK (mood IS NULL OR length(mood) <= 32),
   title TEXT CHECK (title IS NULL OR length(title) <= 30),

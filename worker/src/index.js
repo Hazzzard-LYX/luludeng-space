@@ -8,10 +8,10 @@ const LOGIN_PATH = "/api/login";
 const ACCESS_CERTS_TTL_MS = 60 * 60 * 1000;
 
 const MAX_AUTHOR_LENGTH = 50;
-const MAX_CONTENT_LENGTH = 500;
+const MAX_CONTENT_LENGTH = 5000;
 const MAX_MOOD_LENGTH = 32;
 const MAX_TITLE_LENGTH = 30;
-const MAX_BODY_LENGTH = 4096;
+const MAX_BODY_LENGTH = 65536; // 5000 Chinese characters are ~15 KB as UTF-8 JSON
 const MAX_PHOTO_BYTES = 25 * 1024 * 1024;
 const MAX_PLACE_LENGTH = 50;
 const MAX_PHOTO_NAME_LENGTH = 120;
