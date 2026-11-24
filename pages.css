@@ -226,3 +226,10 @@
 .matcha-home .places-door:hover{transform:rotate(0) scale(.84) translateY(-5px)}
 }
 @media(min-width:761px) and (max-height:800px){.matcha-home .home-doors{align-items:end}.matcha-home .home-door{height:30vh;min-height:0}.matcha-home .home-door .door-photo{height:100%;min-height:0}.matcha-home .home-door .door-photo img{height:100%}}
+
+/* Home: make "WE HAVE BEEN TOGETHER FOR" easier to read over the photo */
+.matcha-home .clock-kicker{font-size:18px;font-weight:600;letter-spacing:.3em;color:#3f5a3a;margin-bottom:2vh;text-shadow:0 0 2px #f7f6ec,0 0 6px #f7f6ec,0 0 14px #f7f6ec,0 0 24px #f7f6eccc}
+@media(min-width:761px) and (max-width:1060px){.matcha-home .clock-kicker{font-size:14px;letter-spacing:.24em}}
+@media(max-width:760px){.matcha-home .clock-kicker{font-size:14px;letter-spacing:.22em}}
+.matcha-home .clock-kicker{display:inline-block;padding:7px 18px 7px 24px;border-radius:999px;background:#f7f6ecc7;box-shadow:0 4px 18px #3c4c3414;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);text-shadow:none}
+@media(min-width:761px) and (max-width:1060px){.matcha-home .clock-kicker{font-size:12px;letter-spacing:.16em;padding:6px 12px 6px 14px}}
