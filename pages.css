@@ -191,3 +191,16 @@
 @media(min-width:761px){.matcha-home .home-doors{transform:none}}
 @media(min-width:761px) and (max-height:800px){.matcha-home .clock-days strong{font-size:clamp(110px,12vw,165px)}.matcha-home .clock-rest{margin-top:1.6vh}.matcha-home .clock-since{margin-top:1.4vh}}
 @media(min-width:761px) and (max-height:800px){.matcha-home .home-doors{transform:translateY(-30px)}}
+
+/* Home page: spread the cards to the edges so the faces in the background photo show in the middle */
+@media(min-width:761px){
+.matcha-home .home-doors{grid-template-columns:minmax(0,500px) minmax(0,420px);justify-content:space-between;max-width:none;width:100%;margin:auto 0 0}
+.matcha-home .places-door{transform:scale(.9);transform-origin:right bottom}
+.matcha-home .places-door:hover{transform:scale(.9) translateY(-5px)}
+}
+@media(min-width:761px) and (max-width:1060px){.matcha-home .home-doors{grid-template-columns:minmax(0,1fr) minmax(0,.85fr);column-gap:22vw}}
+/* Lighter wash behind the counter so the face behind it shows; the digits get a soft glow instead */
+.matcha-home .matcha-shell{background:radial-gradient(ellipse 34% 30% at 50% 36%,#f7f6ec8c 0,#f7f6ec4d 60%,#f7f6ec00 100%),linear-gradient(180deg,#f7f6ec59,#e9eee01a 45%,#e9eee033)}
+.matcha-home .clock-days strong,.matcha-home .clock-days span{text-shadow:0 0 18px #f7f6ecd9,0 0 4px #f7f6ec}
+.matcha-home .clock-kicker,.matcha-home .clock-rest,.matcha-home .clock-since{text-shadow:0 0 3px #f7f6ec,0 0 8px #f7f6ec,0 0 16px #f7f6eccc}
+@media(min-width:761px) and (max-width:1060px){.matcha-home .home-door{gap:12px;padding:12px 14px 12px 12px}.matcha-home .home-door h2{font-size:28px;white-space:nowrap}}
