@@ -204,3 +204,25 @@
 .matcha-home .clock-days strong,.matcha-home .clock-days span{text-shadow:0 0 18px #f7f6ecd9,0 0 4px #f7f6ec}
 .matcha-home .clock-kicker,.matcha-home .clock-rest,.matcha-home .clock-since{text-shadow:0 0 3px #f7f6ec,0 0 8px #f7f6ec,0 0 16px #f7f6eccc}
 @media(min-width:761px) and (max-width:1060px){.matcha-home .home-door{gap:12px;padding:12px 14px 12px 12px}.matcha-home .home-door h2{font-size:28px;white-space:nowrap}}
+
+/* Home cards: tilted like the notes; 照片墙 larger and nudged toward the middle; 愿望单 further left */
+@media(min-width:761px){
+.matcha-home .home-doors{grid-template-columns:minmax(0,560px) minmax(0,420px);padding-left:3vw}
+.matcha-home .us-door{transform:rotate(-1.6deg) scale(1.06);transform-origin:left bottom}
+.matcha-home .us-door:hover{transform:rotate(0) scale(1.06) translateY(-5px)}
+.matcha-home .places-door{transform:rotate(1.8deg) scale(.9);transform-origin:right bottom}
+.matcha-home .places-door:hover{transform:rotate(0) scale(.9) translateY(-5px)}
+.home-wish-note{left:2.5vw}
+}
+@media(min-width:761px) and (max-width:1060px){.matcha-home .home-doors{grid-template-columns:minmax(0,1.1fr) minmax(0,.85fr);column-gap:16vw;padding-left:1vw}}
+@media(min-width:761px) and (min-height:801px){.matcha-home .home-doors{transform:translateY(-18px)}}
+@media(min-width:761px) and (max-height:800px){.matcha-home .home-doors{transform:translateY(-40px)}}
+@media(min-width:761px) and (max-height:800px){
+.matcha-home .home-doors{transform:translateY(-14px)}
+.matcha-home .home-door{min-height:0;height:100%}
+.matcha-home .us-door{transform:rotate(-1.6deg) scale(.97)}
+.matcha-home .us-door:hover{transform:rotate(0) scale(.97) translateY(-5px)}
+.matcha-home .places-door{transform:rotate(1.8deg) scale(.84)}
+.matcha-home .places-door:hover{transform:rotate(0) scale(.84) translateY(-5px)}
+}
+@media(min-width:761px) and (max-height:800px){.matcha-home .home-doors{align-items:end}.matcha-home .home-door{height:30vh;min-height:0}.matcha-home .home-door .door-photo{height:100%;min-height:0}.matcha-home .home-door .door-photo img{height:100%}}
