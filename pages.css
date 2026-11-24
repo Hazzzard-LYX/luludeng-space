@@ -102,26 +102,41 @@
 .matcha-shell{overflow-x:clip}
 @media(max-width:760px){.matcha-home{overflow-x:hidden}}
 
-/* Home page: wish list note in the empty top-left corner (links to wishes.html) */
-.home-wish-note{position:absolute;z-index:3;left:5vw;top:96px;width:clamp(220px,20vw,270px);padding:22px 22px 18px;background:#fbfaf3;border:1px solid #79906c2b;box-shadow:0 14px 34px #5269461a;color:#3f5440;transform:rotate(-1.4deg);transition:transform .25s,box-shadow .25s}
-.home-wish-note:hover,.home-wish-note:focus-visible{transform:rotate(0) translateY(-3px);box-shadow:0 18px 42px #52694626}
-.wish-note-pin{position:absolute;left:50%;top:-7px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#8aa07c;box-shadow:0 2px 4px #3c4c3440}
-.home-wish-note small{font:600 9px "Cormorant Garamond";letter-spacing:.2em;color:#91a284}
-.home-wish-note h2{display:flex;align-items:center;justify-content:space-between;margin:6px 0 12px;font-size:26px;font-weight:500;color:#34482f}
-.home-wish-note h2 b{font-weight:400;font-size:18px;color:#7b9070;transition:transform .2s}
-.home-wish-note:hover h2 b{transform:translateX(3px)}
-.home-wish-note ul{margin:0;padding:0;list-style:none;border-top:1px solid #79906c33}
-.home-wish-note li{display:grid;grid-template-columns:16px minmax(0,1fr) auto;white-space:nowrap;gap:9px;align-items:center;padding:9px 0;border-bottom:1px dashed #79906c40;font-size:12px}
-.home-wish-note li i{width:12px;height:12px;border:1.5px solid #7f9673;border-radius:2px;background:#fffdf6}
-.home-wish-note li.has-done i{background:#6f8663;border-color:#6f8663;box-shadow:inset 0 0 0 2px #fbfaf3}
-.home-wish-note li em{font-style:normal;font-size:11px;color:#6b7c64;white-space:nowrap}
-.home-wish-note li em b{font:600 15px "Cormorant Garamond";color:#4a6343;margin:0 1px}
-.home-wish-note p{margin:10px 0 0;font-size:10px;letter-spacing:.06em;color:#8a967f}
-@media(max-width:1060px){.home-wish-note{width:210px;padding:18px 18px 14px}.home-wish-note h2{font-size:22px}}
-@media(max-width:760px){.matcha-shell>.matcha-head{grid-row:1}.matcha-shell>.love-clock{grid-row:2}.home-wish-note{grid-row:3;position:relative;left:auto;top:auto;width:100%;max-width:none;margin:0 0 6px;transform:none}.home-wish-note:hover{transform:translateY(-2px)}.matcha-shell>.home-doors{grid-row:4}}
 
 /* Home page map card: assets/world-map.png is black land on transparency, so use it as a mask
    and paint the land in the matcha palette, framed on East Asia. */
 .mini-map-land{position:absolute;inset:0;background:#a9bf98;-webkit-mask:url(assets/world-map.png) 87% 31%/auto 175% no-repeat;mask:url(assets/world-map.png) 87% 31%/auto 175% no-repeat;transition:transform .5s ease}
 .home-door:hover .mini-map-land{transform:scale(1.04)}
 .mini-map-pin{position:absolute;left:47%;top:46%;width:11px;height:11px;border-radius:50% 50% 50% 0;background:#5f7653;border:2px solid #fbfaf3;transform:rotate(-45deg);box-shadow:0 2px 5px #3c4c3440}
+
+/* Home page: two pinned notes in the empty top corners.
+   愿望单 (left, links to wishes.html) and 留言板 (right, the button that opens the notebook). */
+.home-wish-note,.matcha-home .home-board-note.message-board-tab{position:absolute;z-index:3;top:92px;bottom:auto;display:flex;flex-direction:column;align-items:stretch;width:clamp(270px,23vw,330px);min-width:0;height:auto;padding:28px 26px 20px;border:1px solid #79906c2b;border-radius:0;background:#fbfaf3;color:#3f5440;font:inherit;letter-spacing:normal;text-align:left;writing-mode:horizontal-tb;box-shadow:0 16px 38px #5269461f;cursor:pointer;transition:transform .25s,box-shadow .25s}
+.home-wish-note{left:5vw;transform:rotate(-1.4deg)}
+.matcha-home .home-board-note.message-board-tab{right:5vw;transform:rotate(1.4deg);background:linear-gradient(90deg,transparent 16px,#d9897e66 16px,#d9897e66 17px,transparent 17px),repeating-linear-gradient(#fbf8ec 0 29px,#e2e4d4 29px 30px)}
+.matcha-home .home-board-note.message-board-tab::before{content:none}
+.home-wish-note:hover,.home-wish-note:focus-visible,.matcha-home .home-board-note.message-board-tab:hover,.matcha-home .home-board-note.message-board-tab:focus-visible{width:clamp(270px,23vw,330px);transform:rotate(0) translateY(-4px);box-shadow:0 22px 46px #5269462e;color:#3f5440}
+.matcha-home .home-board-note.message-board-tab:hover{background:linear-gradient(90deg,transparent 16px,#d9897e66 16px,#d9897e66 17px,transparent 17px),repeating-linear-gradient(#fbf8ec 0 29px,#e2e4d4 29px 30px)}
+.wish-note-pin{position:absolute;left:50%;top:-8px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:#8aa07c;box-shadow:0 2px 5px #3c4c3440}
+.home-board-note .wish-note-pin{background:#c0857c}
+.home-wish-note small,.home-board-note small{font:600 10px "Cormorant Garamond";letter-spacing:.2em;color:#91a284}
+.home-wish-note h2,.home-board-note .home-note-title{display:flex;align-items:center;justify-content:space-between;margin:8px 0 14px;font-size:32px;font-weight:500;line-height:1.2;color:#34482f}
+.home-board-note .home-note-title{font-family:"KaiTi","STKaiti",serif;font-weight:600}
+.home-wish-note h2 b,.home-board-note .home-note-title b{font-weight:400;font-size:20px;color:#7b9070;transition:transform .2s}
+.home-wish-note:hover h2 b,.home-board-note:hover .home-note-title b{transform:translateX(4px)}
+.home-wish-note ul{margin:0;padding:0;list-style:none;border-top:1px solid #79906c33}
+.home-wish-note li{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px dashed #79906c40;font-size:14px;white-space:nowrap}
+.home-wish-note li i{width:14px;height:14px;border:1.5px solid #7f9673;border-radius:2px;background:#fffdf6}
+.home-wish-note li.has-done i{background:#6f8663;border-color:#6f8663;box-shadow:inset 0 0 0 2px #fbfaf3}
+.home-wish-note li em{font-style:normal;font-size:12px;color:#6b7c64}
+.home-wish-note li em b{font:600 18px "Cormorant Garamond";color:#4a6343;margin:0 2px}
+.home-board-lines{display:grid;border-top:1px solid #8b84764d}
+.home-board-lines>span{padding:11px 0;border-bottom:1px dashed #8b847666;font:500 14px "KaiTi","STKaiti",serif;color:#3a3933;white-space:nowrap}
+.home-board-lines>span:empty{display:none}
+.home-note-latest{display:block;margin:12px 0 0;overflow:hidden;font-size:12px;line-height:1.6;color:#6f7d68;text-overflow:ellipsis;white-space:nowrap}
+.home-board-note .home-note-latest{font-family:"KaiTi","STKaiti",serif;color:#555149}
+@media(max-width:1060px){.home-wish-note,.matcha-home .home-board-note.message-board-tab,.home-wish-note:hover,.matcha-home .home-board-note.message-board-tab:hover{width:228px;padding:22px 18px 15px;top:86px}.home-wish-note h2,.home-board-note .home-note-title{font-size:25px;margin:6px 0 10px}.home-wish-note li,.home-board-lines>span{font-size:12px;padding:8px 0}.home-wish-note li em{font-size:11px}.home-wish-note li em b{font-size:15px}}
+@media(max-width:760px){.matcha-shell>.matcha-head{grid-row:1}.matcha-shell>.love-clock{grid-row:2}
+.home-wish-note,.matcha-home .home-board-note.message-board-tab,.home-wish-note:hover,.matcha-home .home-board-note.message-board-tab:hover{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;margin:0 0 6px;padding:24px 20px 16px;transform:none}
+.home-wish-note{grid-row:3}.matcha-home .home-board-note.message-board-tab{grid-row:4}.matcha-shell>.home-doors{grid-row:5}
+.home-wish-note h2,.home-board-note .home-note-title{font-size:26px}.home-wish-note li,.home-board-lines>span{font-size:14px;padding:10px 0}}

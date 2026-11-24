@@ -205,11 +205,30 @@ function setView(next) {
 
 function renderHome() {
   const ordered = orderedMessages();
+  renderHomeNote(ordered);
   if (!ordered.length) {
     readSummary.textContent = "还没有写过留言";
     return;
   }
   readSummary.textContent = `共 ${ordered.length} 篇 · 最近一篇 ${formatDate(ordered[ordered.length - 1].createdAt)}`;
+}
+
+// The 留言板 note on the home page (the board's open button) shows a short summary.
+function renderHomeNote(ordered) {
+  const count = document.getElementById("home-board-count");
+  const date = document.getElementById("home-board-date");
+  const latest = document.getElementById("home-board-latest");
+  if (!count || !date || !latest) return;
+  if (!ordered.length) {
+    count.textContent = "还没有写过留言";
+    date.textContent = "";
+    latest.textContent = "下一页，留给我们";
+    return;
+  }
+  const last = ordered[ordered.length - 1];
+  count.textContent = `共 ${ordered.length} 篇`;
+  date.textContent = `最近 ${formatDate(last.createdAt)}`;
+  latest.textContent = last.title ? `最新一篇 ·《${last.title}》` : `最新一篇 · ${last.text.replace(/\s+/g, " ").slice(0, 18)}${last.text.length > 18 ? "…" : ""}`;
 }
 
 function renderToc() {

@@ -25,6 +25,16 @@
     .then(data => {
       if (!data || !Array.isArray(data.people)) return;
       rows.replaceChildren(...data.people.map(row));
+
+      // Newest wish that is still waiting to come true, from either person.
+      const latest = document.getElementById("home-wish-latest");
+      const newest = data.people
+        .flatMap(person => person.wishes.filter(wish => !wish.done).map(wish => ({ ...wish, name: person.name })))
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+      if (latest && newest) {
+        const text = newest.text.length > 16 ? `${newest.text.slice(0, 16)}…` : newest.text;
+        latest.textContent = `最新愿望 · ${newest.name}：${text}`;
+      }
     })
     .catch(() => {
       rows.querySelectorAll("em").forEach(em => { em.textContent = ""; });
