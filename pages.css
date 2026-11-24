@@ -140,3 +140,28 @@
 .home-wish-note,.matcha-home .home-board-note.message-board-tab,.home-wish-note:hover,.matcha-home .home-board-note.message-board-tab:hover{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:100%;max-width:none;margin:0 0 6px;padding:24px 20px 16px;transform:none}
 .home-wish-note{grid-row:3}.matcha-home .home-board-note.message-board-tab{grid-row:4}.matcha-shell>.home-doors{grid-row:5}
 .home-wish-note h2,.home-board-note .home-note-title{font-size:26px}.home-wish-note li,.home-board-lines>span{font-size:14px;padding:10px 0}}
+
+/* Home notes: larger, and lowered to sit beside the day counter (2026-11-24 tweak) */
+@media(min-width:1061px){
+.home-wish-note,.matcha-home .home-board-note.message-board-tab,.home-wish-note:hover,.matcha-home .home-board-note.message-board-tab:hover{top:clamp(120px,17vh,170px);width:clamp(310px,26vw,390px);padding:34px 32px 24px}
+.home-wish-note h2,.home-board-note .home-note-title{font-size:38px;margin:10px 0 16px}
+.home-wish-note h2 b,.home-board-note .home-note-title b{font-size:24px}
+.home-wish-note small,.home-board-note small{font-size:11px}
+.home-wish-note li,.home-board-lines>span{font-size:16px;padding:13px 0}
+.home-wish-note li{grid-template-columns:20px minmax(0,1fr) auto}
+.home-wish-note li i{width:16px;height:16px}
+.home-wish-note li em{font-size:13px}
+.home-wish-note li em b{font-size:21px}
+.home-note-latest{font-size:13px;margin-top:14px}
+.wish-note-pin{width:18px;height:18px;margin-left:-9px;top:-9px}
+.matcha-home .home-board-note.message-board-tab,.matcha-home .home-board-note.message-board-tab:hover{background:linear-gradient(90deg,transparent 18px,#d9897e66 18px,#d9897e66 19px,transparent 19px),repeating-linear-gradient(#fbf8ec 0 33px,#e2e4d4 33px 34px)}
+}
+@media(min-width:761px) and (max-width:1060px){
+.home-wish-note,.matcha-home .home-board-note.message-board-tab,.home-wish-note:hover,.matcha-home .home-board-note.message-board-tab:hover{top:clamp(100px,15vh,130px);width:250px}
+}
+@media(min-width:1061px) and (max-height:800px){
+.home-wish-note,.matcha-home .home-board-note.message-board-tab,.home-wish-note:hover,.matcha-home .home-board-note.message-board-tab:hover{top:88px;width:clamp(290px,24vw,350px);padding:28px 28px 18px}
+.home-wish-note h2,.home-board-note .home-note-title{font-size:33px;margin:6px 0 10px}
+.home-wish-note li,.home-board-lines>span{font-size:15px;padding:9px 0}
+.home-note-latest{margin-top:10px}
+}
