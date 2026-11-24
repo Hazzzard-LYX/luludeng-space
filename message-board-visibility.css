@@ -758,3 +758,9 @@
     transition: none;
   }
 }
+
+/* While an input method is composing (pinyin not yet turned into characters), let the page
+   scroll instead of clipping, so letters typed past the last line stay visible. */
+.notebook.composing .compose-text-page.ime-composing {
+  overflow-y: auto;
+}

@@ -397,7 +397,11 @@ function reflowComposeText(text, globalCaret = text.length, focus = false) {
 
   while (composeTextareas.length < fragments.length) composeTextareas.push(createComposeTextarea());
   while (composeTextareas.length > fragments.length) composeTextareas.pop().remove();
-  composeTextareas.forEach((textarea, index) => { textarea.value = fragments[index] || ""; });
+  composeTextareas.forEach((textarea, index) => {
+    const value = fragments[index] || "";
+    if (textarea.value !== value) textarea.value = value;
+    textarea.scrollTop = 0;
+  });
 
   const caret = Math.min(globalCaret, limitedText.length);
   let accumulated = 0;
@@ -422,14 +426,32 @@ function reflowComposeText(text, globalCaret = text.length, focus = false) {
   }
 }
 
+// Chinese/Japanese input methods put the raw pinyin into the textarea while a character is being
+// chosen. Re-paginating then would move those letters to the next page and break the composition,
+// committing them as plain letters. So pagination waits until the input method commits the text.
+let imeComposing = false;
+
 function handleComposeInput(event) {
   const textarea = event.currentTarget;
+  if (imeComposing || event.isComposing) return;
   reflowComposeText(getComposeText(), getGlobalCaret(textarea), true);
 }
 
 function bindComposeTextarea(textarea) {
   textarea.addEventListener("input", handleComposeInput);
+  textarea.addEventListener("compositionstart", () => {
+    imeComposing = true;
+    // Let the page scroll while composing so pinyin past the last line stays visible.
+    textarea.classList.add("ime-composing");
+  });
+  textarea.addEventListener("compositionend", event => {
+    imeComposing = false;
+    textarea.classList.remove("ime-composing");
+    // Some browsers send no further input event after compositionend; reflow once here.
+    handleComposeInput(event);
+  });
   textarea.addEventListener("keydown", event => {
+    if (event.isComposing || imeComposing) return;
     if (event.key !== "Backspace" || textarea.selectionStart !== 0 || textarea.selectionEnd !== 0) return;
     const pageIndex = composeTextareas.indexOf(textarea);
     if (pageIndex <= 0) return;
