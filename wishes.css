@@ -1,0 +1,566 @@
+/* Wish lists (wishes.html) — matcha palette shared with the rest of the site */
+.wishes-page {
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+  background: #f1f3e7;
+}
+
+.wishes-main {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 44px 5vw 70px;
+  color: #3f5440;
+}
+
+.wish-loading {
+  padding: 80px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #7d8a75;
+}
+
+.wish-intro h1,
+.wish-list-head h1 {
+  margin: 10px 0 8px;
+  font-size: clamp(32px, 4.4vw, 48px);
+  font-weight: 500;
+  line-height: 1.2;
+  color: #34482f;
+}
+
+.wish-intro p {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: .06em;
+  color: #788472;
+}
+
+/* ---------- page 1 ---------- */
+
+.wish-people {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-top: 36px;
+}
+
+.wish-person {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-height: 300px;
+  padding: 30px 32px 28px;
+  border: 1px solid #79906c2b;
+  background: #fbfaf3;
+  box-shadow: 0 12px 35px #5269460d;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .25s, box-shadow .25s;
+}
+
+.wish-person:hover,
+.wish-person:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 45px #52694618;
+}
+
+.wish-person-head small,
+.wish-allowance > small {
+  font: 600 9px "Cormorant Garamond", serif;
+  letter-spacing: .22em;
+  color: #91a284;
+}
+
+.wish-person-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 0;
+  font-size: 30px;
+  font-weight: 500;
+  color: #34482f;
+}
+
+.wish-person-head em {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e3ebd8;
+  color: #56704c;
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: .1em;
+}
+
+.wish-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+  border-top: 1px solid #79906c33;
+  border-bottom: 1px solid #79906c33;
+}
+
+.wish-stats > div {
+  padding: 14px 4px 12px;
+  text-align: center;
+}
+
+.wish-stats > div + div {
+  border-left: 1px solid #79906c26;
+}
+
+.wish-stats dt {
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: #7d8a75;
+}
+
+.wish-stats dd {
+  margin: 4px 0 0;
+  font: 500 34px/1 "Cormorant Garamond", serif;
+  color: #4a6343;
+}
+
+.wish-peek {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wish-peek li {
+  position: relative;
+  padding: 6px 0 6px 22px;
+  overflow: hidden;
+  font-size: 13px;
+  color: #4d5f48;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wish-peek li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid #8aa07c;
+  border-radius: 2px;
+}
+
+.wish-peek li.empty {
+  padding-left: 0;
+  color: #96a08f;
+}
+
+.wish-peek li.empty::before {
+  display: none;
+}
+
+.wish-arrow {
+  position: absolute;
+  right: 28px;
+  top: 30px;
+  font-weight: 400;
+  font-size: 20px;
+  color: #7b9070;
+  transition: transform .2s;
+}
+
+.wish-person:hover .wish-arrow {
+  transform: translateX(4px);
+}
+
+/* ---------- page 2 ---------- */
+
+.wish-list-head .wish-stats {
+  max-width: 460px;
+  margin-top: 18px;
+}
+
+.wish-back {
+  display: block;
+  margin-bottom: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #54705e;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: .1em;
+  cursor: pointer;
+}
+
+.wish-back:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.wish-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px;
+  align-items: start;
+  margin-top: 32px;
+}
+
+.wish-list-panel,
+.wish-allowance {
+  padding: 26px 28px;
+  border: 1px solid #79906c2b;
+  background: #fbfaf3;
+  box-shadow: 0 12px 35px #5269460d;
+}
+
+.wish-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  border-bottom: 1px solid #728963;
+}
+
+.wish-add input {
+  min-width: 0;
+  padding: 12px 4px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #34482f;
+  font: inherit;
+  font-size: 15px;
+}
+
+.wish-add input::placeholder {
+  color: #a3ae9b;
+}
+
+.wish-add button,
+.allowance-form button {
+  border: 0;
+  background: #728963;
+  color: #fff;
+  padding: 0 18px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.wish-add button:hover,
+.allowance-form button:hover {
+  background: #566e4e;
+}
+
+.wish-add button:disabled,
+.wish-add input:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.wish-note {
+  margin: 0;
+  padding: 12px 14px;
+  background: #eef2e4;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #5d6f56;
+}
+
+.wish-status {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: #56704c;
+}
+
+.wish-section-title {
+  margin: 28px 0 6px;
+  font: 600 11px "Cormorant Garamond", serif;
+  letter-spacing: .2em;
+  color: #8a9a82;
+}
+
+.wish-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wish-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "check delete" "meta delete";
+  column-gap: 12px;
+  padding: 12px 2px;
+  border-bottom: 1px dashed #79906c40;
+}
+
+.wish-check {
+  grid-area: check;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.wish-check input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.wish-box {
+  position: relative;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border: 1.5px solid #6f8663;
+  border-radius: 3px;
+  background: #fffdf6;
+  transition: background .2s, border-color .2s;
+}
+
+.wish-box::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 1px;
+  width: 6px;
+  height: 12px;
+  border: solid #fff;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform .2s;
+}
+
+.wish-check input:checked + .wish-box {
+  border-color: #56704c;
+  background: #56704c;
+}
+
+.wish-check input:checked + .wish-box::after {
+  transform: rotate(45deg) scale(1);
+}
+
+.wish-check input:focus-visible + .wish-box {
+  box-shadow: 0 0 0 3px #91aa7859;
+}
+
+.wish-check input:disabled + .wish-box {
+  opacity: .6;
+}
+
+.wish-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #34482f;
+  overflow-wrap: anywhere;
+}
+
+.wish-item.done .wish-text {
+  color: #8a9783;
+  text-decoration: line-through;
+  text-decoration-color: #8a978388;
+}
+
+.wish-meta {
+  grid-area: meta;
+  margin: 4px 0 0 34px;
+  font-size: 10px;
+  letter-spacing: .04em;
+  color: #96a08f;
+}
+
+.wish-delete {
+  grid-area: delete;
+  align-self: start;
+  border: 0;
+  background: none;
+  color: #a2aa9b;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.wish-delete:hover {
+  color: #b6534d;
+}
+
+.wish-empty {
+  padding: 18px 2px;
+  font-size: 13px;
+  color: #96a08f;
+}
+
+.wish-allowance {
+  position: sticky;
+  top: 20px;
+  text-align: center;
+}
+
+.allowance-number {
+  margin-top: 10px;
+  font: 500 64px/1 "Cormorant Garamond", serif;
+  color: #4a6343;
+}
+
+.wish-allowance > p {
+  margin: 6px 0 0;
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: #7d8a75;
+}
+
+.allowance-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.allowance-buttons button {
+  border: 1px solid #7385682b;
+  background: #f4f3ea;
+  color: #5d7155;
+  padding: 9px 4px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.allowance-buttons button:hover,
+.allowance-buttons button.active {
+  background: #e3ebd8;
+  border-color: #72896366;
+}
+
+.allowance-buttons button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.allowance-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px;
+  background: #f1f4e8;
+  text-align: left;
+}
+
+.allowance-form label {
+  display: grid;
+  gap: 5px;
+  font-size: 11px;
+  color: #6b7c64;
+}
+
+.allowance-form input {
+  width: 100%;
+  padding: 8px 6px;
+  border: 0;
+  border-bottom: 1px solid #829477;
+  outline: 0;
+  background: transparent;
+  color: #34482f;
+  font: inherit;
+  font-size: 13px;
+}
+
+.allowance-form button {
+  padding: 10px;
+}
+
+.allowance-history {
+  margin-top: 24px;
+  text-align: left;
+}
+
+.allowance-history h3 {
+  margin: 0 0 6px;
+  font: 600 10px "Cormorant Garamond", serif;
+  letter-spacing: .2em;
+  color: #8a9a82;
+}
+
+.allowance-history ul {
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.allowance-history li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px dotted #79906c40;
+  font-size: 12px;
+  color: #4d5f48;
+}
+
+.allowance-history li b {
+  font: 600 15px "Cormorant Garamond", serif;
+}
+
+.allowance-history li.up b {
+  color: #56704c;
+}
+
+.allowance-history li.down b {
+  color: #a0524c;
+}
+
+.allowance-history li span {
+  overflow-wrap: anywhere;
+}
+
+.allowance-history li time {
+  font-size: 10px;
+  color: #96a08f;
+}
+
+.allowance-history li.empty {
+  display: block;
+  color: #96a08f;
+}
+
+@media (max-width: 760px) {
+  .wishes-main {
+    padding: 26px 16px 50px;
+  }
+
+  .wish-people,
+  .wish-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .wish-person {
+    min-height: 0;
+    padding: 24px 20px 22px;
+  }
+
+  .wish-list-panel,
+  .wish-allowance {
+    padding: 20px 18px;
+  }
+
+  .wish-allowance {
+    position: static;
+  }
+
+  .wish-stats dd {
+    font-size: 28px;
+  }
+}

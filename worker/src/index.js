@@ -3,6 +3,9 @@ const PHOTOS_PATH = "/api/photos";
 const PHOTO_CONFIRM_PATH = "/api/photos/confirm";
 const PHOTO_FILE_PREFIX = "/api/photos/file/";
 const PLACES_PATH = "/api/places";
+const WISHES_PATH = "/api/wishes";
+const WISH_CHECK_PATH = "/api/wishes/check";
+const WISH_ALLOWANCE_PATH = "/api/wishes/allowance";
 const SESSION_PATH = "/api/session";
 const LOGIN_PATH = "/api/login";
 const ACCESS_CERTS_TTL_MS = 60 * 60 * 1000;
@@ -496,6 +499,161 @@ async function listPlaces(request, env) {
   return json(request, env, { places: results || [] });
 }
 
+/* ---------- wishes ---------- */
+
+// Each person has their own wish list. Making a wish uses one slot of their allowance; the allowance is
+// a ledger (wish_allowance) that the owner can raise (with a reason) or lower. Remaining =
+// sum(allowance deltas) - wishes made (deleted pending wishes give their slot back).
+const PEOPLE = { lulu: "噜噜", dengdeng: "噔噔" };
+const MAX_WISH_LENGTH = 200;
+const MAX_REASON_LENGTH = 100;
+const MAX_ALLOWANCE_STEP = 20;
+
+// WISH_OWNERS secret: "lulu=email1,dengdeng=email2". Unknown emails can read but not change anything.
+function personOf(env, user) {
+  if (env.ACCESS_DISABLED === "true" && env.DEV_PERSON) return env.DEV_PERSON;
+  const email = String(user.email || "").toLowerCase();
+  for (const pair of String(env.WISH_OWNERS || "").split(",")) {
+    const [person, address] = pair.split("=").map(part => part.trim().toLowerCase());
+    if (PEOPLE[person] && address && address === email) return person;
+  }
+  return null;
+}
+
+async function wishSummary(env, owner) {
+  const [wishes, allowance] = await Promise.all([
+    env.DB.prepare(`
+      SELECT id, text, created_at, done, done_at, done_by
+      FROM wishes WHERE owner = ?1 AND visible = 1
+      ORDER BY created_at ASC, id ASC
+    `).bind(owner).all(),
+    env.DB.prepare(`
+      SELECT delta, reason, created_by, created_at
+      FROM wish_allowance WHERE owner = ?1
+      ORDER BY created_at DESC, id DESC
+    `).bind(owner).all()
+  ]);
+  const list = (wishes.results || []).map(row => ({ ...row, done: row.done === 1 }));
+  const changes = allowance.results || [];
+  const granted = changes.reduce((sum, row) => sum + Number(row.delta || 0), 0);
+  const done = list.filter(wish => wish.done).length;
+  return {
+    key: owner,
+    name: PEOPLE[owner],
+    done,
+    pending: list.length - done,
+    granted,
+    remaining: Math.max(0, granted - list.length),
+    wishes: list,
+    allowance: changes.slice(0, 50)
+  };
+}
+
+async function listWishes(request, env, user) {
+  const me = personOf(env, user);
+  const people = await Promise.all(Object.keys(PEOPLE).map(owner => wishSummary(env, owner)));
+  return json(request, env, { me, people });
+}
+
+async function requirePerson(request, env, user) {
+  const me = personOf(env, user);
+  if (!me) return { error: json(request, env, { error: "没有认出你是噜噜还是噔噔，请检查 WISH_OWNERS 设置" }, 403) };
+  return { me };
+}
+
+async function createWish(request, env, user) {
+  const { me, error } = await requirePerson(request, env, user);
+  if (error) return error;
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (bodyError) {
+    return jsonBodyError(request, env, bodyError);
+  }
+  const text = cleanString(body.text);
+  if (!text || text.length > MAX_WISH_LENGTH) {
+    return json(request, env, { error: `愿望需要 1-${MAX_WISH_LENGTH} 个字` }, 400);
+  }
+  const summary = await wishSummary(env, me);
+  if (summary.remaining < 1) {
+    return json(request, env, { error: "许愿名额用完了，先增加名额吧" }, 409);
+  }
+  const wish = { id: crypto.randomUUID(), text, created_at: new Date().toISOString() };
+  await env.DB.prepare(`
+    INSERT INTO wishes (id, owner, text, created_at, done, visible) VALUES (?1, ?2, ?3, ?4, 0, 1)
+  `).bind(wish.id, me, wish.text, wish.created_at).run();
+  return json(request, env, { ok: true, wish }, 201);
+}
+
+async function checkWish(request, env, user) {
+  const { me, error } = await requirePerson(request, env, user);
+  if (error) return error;
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (bodyError) {
+    return jsonBodyError(request, env, bodyError);
+  }
+  const id = cleanString(body.id);
+  if (!id || id.length > 128) return json(request, env, { error: "缺少有效的愿望 id" }, 400);
+  const done = body.done === true;
+  const result = await env.DB.prepare(`
+    UPDATE wishes
+    SET done = ?2, done_at = ?3, done_by = ?4
+    WHERE id = ?1 AND visible = 1
+  `).bind(id, done ? 1 : 0, done ? new Date().toISOString() : null, done ? me : null).run();
+  if (!result.meta?.changes) return json(request, env, { error: "没有找到这个愿望" }, 404);
+  return json(request, env, { ok: true });
+}
+
+async function deleteWish(request, env, user, url) {
+  const { me, error } = await requirePerson(request, env, user);
+  if (error) return error;
+  const id = cleanString(url.searchParams.get("id"));
+  if (!id || id.length > 128) return json(request, env, { error: "缺少有效的愿望 id" }, 400);
+  const result = await env.DB.prepare(`
+    UPDATE wishes SET visible = 0
+    WHERE id = ?1 AND owner = ?2 AND done = 0 AND visible = 1
+  `).bind(id, me).run();
+  if (!result.meta?.changes) {
+    return json(request, env, { error: "只能删除自己还没实现的愿望" }, 404);
+  }
+  return json(request, env, { ok: true });
+}
+
+async function changeAllowance(request, env, user) {
+  const { me, error } = await requirePerson(request, env, user);
+  if (error) return error;
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (bodyError) {
+    return jsonBodyError(request, env, bodyError);
+  }
+  const delta = Number(body.delta);
+  const reason = cleanString(body.reason);
+  if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > MAX_ALLOWANCE_STEP) {
+    return json(request, env, { error: `每次可以增减 1-${MAX_ALLOWANCE_STEP} 个名额` }, 400);
+  }
+  if (delta > 0 && !reason) {
+    return json(request, env, { error: "增加名额需要写一个理由" }, 400);
+  }
+  if (reason.length > MAX_REASON_LENGTH) {
+    return json(request, env, { error: `理由最多 ${MAX_REASON_LENGTH} 个字` }, 400);
+  }
+  if (delta < 0) {
+    const summary = await wishSummary(env, me);
+    if (summary.remaining + delta < 0) {
+      return json(request, env, { error: `最多只能减少 ${summary.remaining} 个` }, 409);
+    }
+  }
+  await env.DB.prepare(`
+    INSERT INTO wish_allowance (id, owner, delta, reason, created_by, created_at)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+  `).bind(crypto.randomUUID(), me, delta, reason || null, me, new Date().toISOString()).run();
+  return json(request, env, { ok: true });
+}
+
 /* ---------- router ---------- */
 
 async function route(request, env, url, user) {
@@ -539,6 +697,23 @@ async function route(request, env, url, user) {
 
   if (pathname === PLACES_PATH) {
     if (method === "GET") return listPlaces(request, env);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === WISHES_PATH) {
+    if (method === "GET") return listWishes(request, env, user);
+    if (method === "POST") return createWish(request, env, user);
+    if (method === "DELETE") return deleteWish(request, env, user, url);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === WISH_CHECK_PATH) {
+    if (method === "POST") return checkWish(request, env, user);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === WISH_ALLOWANCE_PATH) {
+    if (method === "POST") return changeAllowance(request, env, user);
     return json(request, env, { error: "Method not allowed" }, 405);
   }
 

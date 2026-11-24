@@ -101,3 +101,15 @@
    which pushed the fixed message board and its button past the right edge. */
 .matcha-shell{overflow-x:clip}
 @media(max-width:760px){.matcha-home{overflow-x:hidden}}
+
+/* Home page: third card for the wish lists */
+.door-wish{height:100%;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:0 14%;background:#e9efdf}
+.door-wish i{position:relative;display:block;height:14px;padding-left:24px}
+.door-wish i::before{content:"";position:absolute;left:0;top:0;width:12px;height:12px;border:1.5px solid #7f9673;border-radius:2px;background:#fbfaf3}
+.door-wish i::after{content:"";position:absolute;left:24px;right:0;top:6px;height:1.5px;background:#b9c8ad}
+.door-wish i.on::before{background:#6f8663;border-color:#6f8663}
+.door-wish i.on::after{background:#9fb293}
+.door-wish i:nth-child(2)::after{right:22%}
+.door-wish i:nth-child(4)::after{right:35%}
+@media(min-width:1000px){.matcha-home .home-doors{grid-template-columns:repeat(3,1fr);max-width:1180px}.matcha-home .home-door{grid-template-columns:34% 1fr auto;gap:16px}.matcha-home .home-door h2{font-size:32px}}
+@media(min-width:761px) and (max-width:999px){.matcha-home .wishes-door{grid-column:1/-1;min-height:130px}.matcha-home .wishes-door .door-wish{padding:0 30%}}
