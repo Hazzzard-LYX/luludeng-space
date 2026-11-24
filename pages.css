@@ -102,14 +102,20 @@
 .matcha-shell{overflow-x:clip}
 @media(max-width:760px){.matcha-home{overflow-x:hidden}}
 
-/* Home page: third card for the wish lists */
-.door-wish{height:100%;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:0 14%;background:#e9efdf}
-.door-wish i{position:relative;display:block;height:14px;padding-left:24px}
-.door-wish i::before{content:"";position:absolute;left:0;top:0;width:12px;height:12px;border:1.5px solid #7f9673;border-radius:2px;background:#fbfaf3}
-.door-wish i::after{content:"";position:absolute;left:24px;right:0;top:6px;height:1.5px;background:#b9c8ad}
-.door-wish i.on::before{background:#6f8663;border-color:#6f8663}
-.door-wish i.on::after{background:#9fb293}
-.door-wish i:nth-child(2)::after{right:22%}
-.door-wish i:nth-child(4)::after{right:35%}
-@media(min-width:1000px){.matcha-home .home-doors{grid-template-columns:repeat(3,1fr);max-width:1180px}.matcha-home .home-door{grid-template-columns:34% 1fr auto;gap:16px}.matcha-home .home-door h2{font-size:32px}}
-@media(min-width:761px) and (max-width:999px){.matcha-home .wishes-door{grid-column:1/-1;min-height:130px}.matcha-home .wishes-door .door-wish{padding:0 30%}}
+/* Home page: wish list note in the empty top-left corner (links to wishes.html) */
+.home-wish-note{position:absolute;z-index:3;left:5vw;top:96px;width:clamp(220px,20vw,270px);padding:22px 22px 18px;background:#fbfaf3;border:1px solid #79906c2b;box-shadow:0 14px 34px #5269461a;color:#3f5440;transform:rotate(-1.4deg);transition:transform .25s,box-shadow .25s}
+.home-wish-note:hover,.home-wish-note:focus-visible{transform:rotate(0) translateY(-3px);box-shadow:0 18px 42px #52694626}
+.wish-note-pin{position:absolute;left:50%;top:-7px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#8aa07c;box-shadow:0 2px 4px #3c4c3440}
+.home-wish-note small{font:600 9px "Cormorant Garamond";letter-spacing:.2em;color:#91a284}
+.home-wish-note h2{display:flex;align-items:center;justify-content:space-between;margin:6px 0 12px;font-size:26px;font-weight:500;color:#34482f}
+.home-wish-note h2 b{font-weight:400;font-size:18px;color:#7b9070;transition:transform .2s}
+.home-wish-note:hover h2 b{transform:translateX(3px)}
+.home-wish-note ul{margin:0;padding:0;list-style:none;border-top:1px solid #79906c33}
+.home-wish-note li{display:grid;grid-template-columns:16px minmax(0,1fr) auto;white-space:nowrap;gap:9px;align-items:center;padding:9px 0;border-bottom:1px dashed #79906c40;font-size:12px}
+.home-wish-note li i{width:12px;height:12px;border:1.5px solid #7f9673;border-radius:2px;background:#fffdf6}
+.home-wish-note li.has-done i{background:#6f8663;border-color:#6f8663;box-shadow:inset 0 0 0 2px #fbfaf3}
+.home-wish-note li em{font-style:normal;font-size:11px;color:#6b7c64;white-space:nowrap}
+.home-wish-note li em b{font:600 15px "Cormorant Garamond";color:#4a6343;margin:0 1px}
+.home-wish-note p{margin:10px 0 0;font-size:10px;letter-spacing:.06em;color:#8a967f}
+@media(max-width:1060px){.home-wish-note{width:210px;padding:18px 18px 14px}.home-wish-note h2{font-size:22px}}
+@media(max-width:760px){.matcha-shell>.matcha-head{grid-row:1}.matcha-shell>.love-clock{grid-row:2}.home-wish-note{grid-row:3;position:relative;left:auto;top:auto;width:100%;max-width:none;margin:0 0 6px;transform:none}.home-wish-note:hover{transform:translateY(-2px)}.matcha-shell>.home-doors{grid-row:4}}
