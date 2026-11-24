@@ -165,3 +165,9 @@
 .home-wish-note li,.home-board-lines>span{font-size:15px;padding:9px 0}
 .home-note-latest{margin-top:10px}
 }
+
+/* Home cards: cover photos (Polaroid has a white frame, so crop slightly into it) */
+.home-door .door-photo.places-cover img{object-position:50% 55%;transform:scale(1.08)}
+.home-door .door-photo img{transition:transform .5s ease}
+.home-door:hover .door-photo img{transform:scale(1.04)}
+.home-door:hover .door-photo.places-cover img{transform:scale(1.12)}
