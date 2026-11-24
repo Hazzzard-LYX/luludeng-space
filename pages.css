@@ -171,3 +171,10 @@
 .home-door .door-photo img{transition:transform .5s ease}
 .home-door:hover .door-photo img{transform:scale(1.04)}
 .home-door:hover .door-photo.places-cover img{transform:scale(1.12)}
+
+/* Home page background: blurred photo of the two of us (pre-shrunk, 23 KB) under a pale matcha wash.
+   The wash is strongest in the middle so the day counter stays easy to read. */
+.matcha-home{position:relative;background:#e9eee0}
+.matcha-home::before{content:"";position:fixed;inset:-40px;z-index:0;background:url(assets/home/home-bg.jpg) 50% 38%/cover no-repeat;filter:blur(9px) saturate(.95) brightness(1.04);pointer-events:none}
+.matcha-home .matcha-shell{position:relative;z-index:1;background:radial-gradient(ellipse 42% 38% at 50% 36%,#f7f6ecd9 0,#f7f6ec99 55%,#f7f6ec00 100%),linear-gradient(180deg,#f7f6ec66,#e9eee026 45%,#e9eee040)}
+.matcha-home .clock-kicker,.matcha-home .clock-rest,.matcha-home .clock-since,.matcha-home .matcha-head{text-shadow:0 0 10px #f7f6ec,0 0 2px #f7f6ec}
