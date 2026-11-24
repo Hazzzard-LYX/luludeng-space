@@ -6,6 +6,9 @@ const PLACES_PATH = "/api/places";
 const WISHES_PATH = "/api/wishes";
 const WISH_CHECK_PATH = "/api/wishes/check";
 const WISH_ALLOWANCE_PATH = "/api/wishes/allowance";
+const PINS_PATH = "/api/pins";
+const PIN_RESTORE_PATH = "/api/pins/restore";
+const PIN_HIDDEN_PATH = "/api/pins/hidden";
 const SESSION_PATH = "/api/session";
 const LOGIN_PATH = "/api/login";
 const ACCESS_CERTS_TTL_MS = 60 * 60 * 1000;
@@ -654,6 +657,115 @@ async function changeAllowance(request, env, user) {
   return json(request, env, { ok: true });
 }
 
+/* ---------- map pins ---------- */
+
+// Footprints and wishes added on the map, plus places hidden from it (right-click delete),
+// shared by every device. Deletes are soft so 撤销 can bring them back.
+const MAX_PIN_NAME_LENGTH = 50;
+const MAX_HIDDEN_KEY_LENGTH = 200;
+
+function wrapLongitude(lng) {
+  const wrapped = lng >= -180 && lng <= 180 ? lng : ((((lng + 180) % 360) + 360) % 360) - 180;
+  return Math.round(wrapped * 1e6) / 1e6;
+}
+
+async function listPins(request, env) {
+  const [pins, hidden] = await Promise.all([
+    env.DB.prepare(`
+      SELECT id, name, type, lat, lng, created_by, created_at
+      FROM map_pins WHERE visible = 1
+      ORDER BY created_at ASC, id ASC
+    `).all(),
+    env.DB.prepare("SELECT key FROM map_hidden").all()
+  ]);
+  return json(request, env, {
+    pins: pins.results || [],
+    hidden: (hidden.results || []).map(row => row.key)
+  });
+}
+
+async function createPin(request, env, user) {
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (bodyError) {
+    return jsonBodyError(request, env, bodyError);
+  }
+  const name = cleanString(body.name);
+  const type = body.type === "wish" ? "wish" : body.type === "footprint" ? "footprint" : "";
+  const lat = Number(body.lat);
+  const lng = Number(body.lng);
+  if (!name || name.length > MAX_PIN_NAME_LENGTH) {
+    return json(request, env, { error: `地点名称需要 1-${MAX_PIN_NAME_LENGTH} 个字` }, 400);
+  }
+  if (!type) return json(request, env, { error: "图钉类型无效" }, 400);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90) {
+    return json(request, env, { error: "地图位置无效" }, 400);
+  }
+  const pin = {
+    id: crypto.randomUUID(),
+    name,
+    type,
+    lat: Math.round(lat * 1e6) / 1e6,
+    lng: wrapLongitude(lng),
+    created_by: personOf(env, user) || null,
+    created_at: new Date().toISOString()
+  };
+  await env.DB.prepare(`
+    INSERT INTO map_pins (id, name, type, lat, lng, created_by, created_at, visible)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1)
+  `).bind(pin.id, pin.name, pin.type, pin.lat, pin.lng, pin.created_by, pin.created_at).run();
+  return json(request, env, { ok: true, pin }, 201);
+}
+
+async function deletePins(request, env, url) {
+  if (url.searchParams.get("all") === "1") {
+    await env.DB.prepare("UPDATE map_pins SET visible = 0 WHERE visible = 1").run();
+    return json(request, env, { ok: true });
+  }
+  const id = cleanString(url.searchParams.get("id"));
+  if (!id || id.length > 128) return json(request, env, { error: "缺少有效的图钉 id" }, 400);
+  const result = await env.DB.prepare("UPDATE map_pins SET visible = 0 WHERE id = ?1 AND visible = 1").bind(id).run();
+  if (!result.meta?.changes) return json(request, env, { error: "没有找到这个图钉" }, 404);
+  return json(request, env, { ok: true });
+}
+
+async function restorePin(request, env) {
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (bodyError) {
+    return jsonBodyError(request, env, bodyError);
+  }
+  const id = cleanString(body.id);
+  if (!id || id.length > 128) return json(request, env, { error: "缺少有效的图钉 id" }, 400);
+  const result = await env.DB.prepare("UPDATE map_pins SET visible = 1 WHERE id = ?1 AND visible = 0").bind(id).run();
+  if (!result.meta?.changes) return json(request, env, { error: "没有找到可以恢复的图钉" }, 404);
+  return json(request, env, { ok: true });
+}
+
+async function hidePlace(request, env) {
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (bodyError) {
+    return jsonBodyError(request, env, bodyError);
+  }
+  const key = cleanString(body.key);
+  if (!key || key.length > MAX_HIDDEN_KEY_LENGTH) return json(request, env, { error: "地点标识无效" }, 400);
+  await env.DB.prepare(`
+    INSERT INTO map_hidden (key, created_at) VALUES (?1, ?2) ON CONFLICT(key) DO NOTHING
+  `).bind(key, new Date().toISOString()).run();
+  return json(request, env, { ok: true });
+}
+
+async function unhidePlace(request, env, url) {
+  const key = cleanString(url.searchParams.get("key"));
+  if (!key || key.length > MAX_HIDDEN_KEY_LENGTH) return json(request, env, { error: "地点标识无效" }, 400);
+  await env.DB.prepare("DELETE FROM map_hidden WHERE key = ?1").bind(key).run();
+  return json(request, env, { ok: true });
+}
+
 /* ---------- router ---------- */
 
 async function route(request, env, url, user) {
@@ -714,6 +826,24 @@ async function route(request, env, url, user) {
 
   if (pathname === WISH_ALLOWANCE_PATH) {
     if (method === "POST") return changeAllowance(request, env, user);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === PINS_PATH) {
+    if (method === "GET") return listPins(request, env);
+    if (method === "POST") return createPin(request, env, user);
+    if (method === "DELETE") return deletePins(request, env, url);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === PIN_RESTORE_PATH) {
+    if (method === "POST") return restorePin(request, env);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === PIN_HIDDEN_PATH) {
+    if (method === "POST") return hidePlace(request, env);
+    if (method === "DELETE") return unhidePlace(request, env, url);
     return json(request, env, { error: "Method not allowed" }, 405);
   }
 

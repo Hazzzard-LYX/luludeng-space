@@ -236,28 +236,75 @@
     { name: "香港", lat: 22.3193, lng: 114.1694 },
     { name: "深圳", lat: 22.5431, lng: 114.0579 }
   ];
-  let pins = loadPins();
-  let hiddenPlaces = loadHiddenPlaces();
+  // Pins and hidden places are stored in D1 (/api/pins) so every device sees the same map.
+  // Older versions kept them in this browser's localStorage; those are uploaded once (migrateLocalPins).
+  let pins = [];
+  let hiddenPlaces = new Set();
+  let pinsReady = false;
   let markers = [];
   let addingType = null;
   let pendingPoint = null;
   let lastDeleted = null;
   let onlinePlaces = [];
 
-  function loadPins() {
+  function readLocal(key, fallback) {
     try {
-      return (JSON.parse(localStorage.getItem(STORAGE_KEY)) || []).map(pin => ({ ...pin, type: pin.type || "wish" }));
+      const value = JSON.parse(localStorage.getItem(key));
+      return value == null ? fallback : value;
     } catch {
-      return [];
+      return fallback;
     }
   }
 
-  function loadHiddenPlaces() {
-    try {
-      return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY)) || []);
-    } catch {
-      return new Set();
+  function wrapLng(lng) {
+    return ((((Number(lng) + 180) % 360) + 360) % 360) - 180;
+  }
+
+  async function api(path, init = {}) {
+    const response = await window.LULU_API.request(path, init);
+    const data = await window.LULU_API.readJson(response);
+    if (!response.ok) throw new Error(data.error || "地图图钉暂时无法同步");
+    return data;
+  }
+
+  function postJson(path, body) {
+    return api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  }
+
+  async function loadPins() {
+    const data = await api("/api/pins", { cache: "no-store" });
+    pins = Array.isArray(data.pins) ? data.pins : [];
+    hiddenPlaces = new Set(Array.isArray(data.hidden) ? data.hidden : []);
+    pinsReady = true;
+  }
+
+  async function refreshPins() {
+    await loadPins();
+    render();
+  }
+
+  // Upload pins/hidden places left in this browser by the old localStorage version, then forget them.
+  async function migrateLocalPins() {
+    const localPins = readLocal(STORAGE_KEY, []);
+    const localHidden = readLocal(HIDDEN_KEY, []);
+    const hasPins = Array.isArray(localPins) && localPins.length > 0;
+    const hasHidden = Array.isArray(localHidden) && localHidden.length > 0;
+    if (!hasPins && !hasHidden) return false;
+    const samePlace = (a, b) => a.name === b.name && Math.abs(a.lat - b.lat) < 1e-4 && Math.abs(wrapLng(a.lng) - wrapLng(b.lng)) < 1e-4;
+    for (const pin of hasPins ? localPins : []) {
+      if (!pin || !pin.name || !Number.isFinite(Number(pin.lat)) || !Number.isFinite(Number(pin.lng))) continue;
+      const type = pin.type === "footprint" ? "footprint" : "wish";
+      if (pins.some(existing => existing.type === type && samePlace(existing, pin))) continue;
+      await postJson("/api/pins", { name: String(pin.name).slice(0, 50), type, lat: Number(pin.lat), lng: Number(pin.lng) });
     }
+    for (const key of hasHidden ? localHidden : []) {
+      if (typeof key === "string" && key && !hiddenPlaces.has(key)) await postJson("/api/pins/hidden", { key });
+    }
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(HIDDEN_KEY);
+    } catch {}
+    return true;
   }
 
   function footprints() {
@@ -268,11 +315,7 @@
     return `${source}:${place.name}:${Number(place.lat).toFixed(4)}:${Number(place.lng).toFixed(4)}`;
   }
 
-  function savePins() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pins));
-      localStorage.setItem(HIDDEN_KEY, JSON.stringify([...hiddenPlaces]));
-    } catch {}
+  function updateCount() {
     const visibleMemories = memories.filter(item => !hiddenPlaces.has(placeKey("memory", item))).length;
     const visibleFootprints = footprints().filter(item => !hiddenPlaces.has(placeKey("footprint", item))).length;
     document.getElementById("pin-count").textContent = String(visibleMemories + visibleFootprints + pins.length);
@@ -315,20 +358,24 @@
       if (map.getZoom() < 5) map.flyTo([place.lat, place.lng], 5, { duration: 0.6 });
     });
     if (source !== "pending") {
-      marker.on("contextmenu", event => {
+      marker.on("contextmenu", async event => {
         L.DomEvent.preventDefault(event.originalEvent);
         L.DomEvent.stopPropagation(event.originalEvent);
         if (!confirm(`从地图删除“${place.name}”吗？\n照片文件会保留。`)) return;
-        if (source === "pin") {
-          lastDeleted = { source, item: { ...place }, index };
-          pins.splice(index, 1);
-        } else {
-          const key = placeKey(source, place);
-          lastDeleted = { source: "hidden", key };
-          hiddenPlaces.add(key);
+        try {
+          if (source === "pin") {
+            await api(`/api/pins?id=${encodeURIComponent(place.id)}`, { method: "DELETE" });
+            lastDeleted = { kind: "pin", id: place.id };
+          } else {
+            const key = placeKey(source, place);
+            await postJson("/api/pins/hidden", { key });
+            lastDeleted = { kind: "hidden", key };
+          }
+          await refreshPins();
+          modeLabel.textContent = `已从地图删除 ${place.name}，照片仍保留`;
+        } catch (error) {
+          modeLabel.textContent = error.message;
         }
-        modeLabel.textContent = `已从地图删除 ${place.name}，照片仍保留`;
-        render();
       });
     }
     markers.push(marker);
@@ -345,13 +392,22 @@
     });
     pins.forEach((item, index) => addMarker(item, item.type, "pin", index));
     if (pendingPoint) addMarker({ ...pendingPoint, name: pendingPoint.name || "新足迹" }, "footprint pending", "pending", -1);
-    savePins();
+    updateCount();
   }
 
-  function addPin(type, name, latlng) {
-    pins.push({ name, type, lat: latlng.lat, lng: latlng.lng });
-    render();
-    modeLabel.textContent = `已添加${type === "footprint" ? "足迹" : "愿望"}：${name}`;
+  async function addPin(type, name, latlng) {
+    if (!pinsReady) {
+      modeLabel.textContent = "地图图钉还在同步，请稍后再试";
+      return;
+    }
+    try {
+      await postJson("/api/pins", { name, type, lat: latlng.lat, lng: latlng.lng });
+      lastDeleted = null;
+      await refreshPins();
+      modeLabel.textContent = `已添加${type === "footprint" ? "足迹" : "愿望"}：${name}`;
+    } catch (error) {
+      modeLabel.textContent = error.message;
+    }
   }
 
   /* ---------- choosing a city ---------- */
@@ -423,22 +479,38 @@
     setMode(null);
   });
 
-  document.getElementById("undo-pin").addEventListener("click", () => {
-    if (lastDeleted) {
-      if (lastDeleted.source === "pin") pins.splice(Math.min(lastDeleted.index, pins.length), 0, lastDeleted.item);
-      else hiddenPlaces.delete(lastDeleted.key);
+  document.getElementById("undo-pin").addEventListener("click", async () => {
+    if (!pinsReady) return;
+    try {
+      if (lastDeleted && lastDeleted.kind === "pin") {
+        await postJson("/api/pins/restore", { id: lastDeleted.id });
+        modeLabel.textContent = "已恢复刚才删除的地点";
+      } else if (lastDeleted && lastDeleted.kind === "hidden") {
+        await api(`/api/pins/hidden?key=${encodeURIComponent(lastDeleted.key)}`, { method: "DELETE" });
+        modeLabel.textContent = "已恢复刚才删除的地点";
+      } else if (pins.length) {
+        const newest = pins[pins.length - 1];
+        await api(`/api/pins?id=${encodeURIComponent(newest.id)}`, { method: "DELETE" });
+        modeLabel.textContent = `已撤销：${newest.name}`;
+      } else {
+        return;
+      }
       lastDeleted = null;
-    } else if (pins.length) {
-      pins.pop();
+      await refreshPins();
+    } catch (error) {
+      modeLabel.textContent = error.message;
     }
-    render();
   });
 
-  document.getElementById("clear-pins").addEventListener("click", () => {
-    if (pins.length && confirm("确定清空所有自定义足迹和愿望吗？")) {
-      pins = [];
+  document.getElementById("clear-pins").addEventListener("click", async () => {
+    if (!pinsReady || !pins.length || !confirm("确定清空所有自定义足迹和愿望吗？\n两个人的设备上都会一起清空。")) return;
+    try {
+      await api("/api/pins?all=1", { method: "DELETE" });
       lastDeleted = null;
-      render();
+      await refreshPins();
+      modeLabel.textContent = "已清空自定义足迹和愿望";
+    } catch (error) {
+      modeLabel.textContent = error.message;
     }
   });
 
@@ -592,6 +664,18 @@
     drawCities();
     autoPlacePending();
     if (document.activeElement === searchInput && searchInput.value.trim()) showResults(searchCities(searchInput.value));
+  });
+  loadPins()
+    .then(async () => {
+      if (await migrateLocalPins()) await loadPins();
+      render();
+    })
+    .catch(error => {
+      modeLabel.textContent = error.message || "地图图钉暂时无法同步";
+    });
+  // Pick up pins added on the other device when coming back to this tab.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && pinsReady) refreshPins().catch(() => {});
   });
   window.LULU_API.loadPlaces().then(places => {
     onlinePlaces = places.filter(place => Number.isFinite(Number(place.lat)) && Number.isFinite(Number(place.lng)));
