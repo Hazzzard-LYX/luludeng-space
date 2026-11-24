@@ -23,6 +23,11 @@ binding = "DB"
 database_name = "luludeng-messages"
 database_id = "d8e24a0d-5167-465e-86e9-e47948e69995"
 
+# Email the other person when a new message is written (Cloudflare Email Routing on luludeng.space).
+# Mail can only go to destination addresses verified in Email Routing; WISH_OWNERS says who is who.
+[[send_email]]
+name = "NOTIFY_EMAIL"
+
 [[r2_buckets]]
 binding = "PHOTOS"
 bucket_name = "luludeng-photos"

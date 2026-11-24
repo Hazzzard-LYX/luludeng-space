@@ -235,7 +235,7 @@ async function listMessages(request, env) {
   return json(request, env, { messages: result.results || [] });
 }
 
-async function createMessage(request, env) {
+async function createMessage(request, env, user, ctx) {
   let body;
   try {
     body = await readJsonBody(request);
@@ -282,7 +282,78 @@ async function createMessage(request, env) {
     message.title
   ).run();
 
+  // Tell the other person by email. Runs after the response so a mail problem never blocks the message.
+  const notice = notifyNewMessage(env, user, message).catch(error => console.error("notify email failed", error));
+  if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(notice);
+
   return json(request, env, { ok: true, message }, 201);
+}
+
+/* ---------- new message email ---------- */
+
+// NOTIFY_EMAIL is a send_email binding (Cloudflare Email Routing); both addresses must be verified
+// destinations there. The email only says a new message arrived — the content stays on the site.
+const NOTIFY_FROM = "notify@luludeng.space";
+const SITE_URL = "https://luludeng.space/";
+
+function emailOf(env, person) {
+  for (const pair of String(env.WISH_OWNERS || "").split(",")) {
+    const [key, address] = pair.split("=").map(part => part.trim());
+    if (key && key.toLowerCase() === person && address) return address;
+  }
+  return null;
+}
+
+function base64Utf8(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+  return btoa(binary);
+}
+
+function shanghaiTime(iso) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  }).formatToParts(new Date(iso)).map(part => [part.type, part.value]));
+  return `${parts.year}.${parts.month}.${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
+function buildNoticeEmail(fromName, to, toName, message) {
+  const subject = `${fromName}给你写了一封新留言`;
+  const text = [
+    `${toName}：`,
+    "",
+    `${fromName}在留言板给你写了一封新留言（${shanghaiTime(message.created_at)}）。`,
+    "",
+    `登录网站去看看吧：${SITE_URL}`,
+    "",
+    "—— 噜噜 & 噔噔的小站"
+  ].join("\r\n");
+  const body = base64Utf8(text).replace(/.{1,76}/g, "$&\r\n");
+  return [
+    `From: =?UTF-8?B?${base64Utf8("噜噜 & 噔噔的小站")}?= <${NOTIFY_FROM}>`,
+    `To: <${to}>`,
+    `Subject: =?UTF-8?B?${base64Utf8(subject)}?=`,
+    `Date: ${new Date().toUTCString()}`,
+    `Message-ID: <${crypto.randomUUID()}@luludeng.space>`,
+    "MIME-Version: 1.0",
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: base64",
+    "",
+    body
+  ].join("\r\n");
+}
+
+async function notifyNewMessage(env, user, message) {
+  if (!env.NOTIFY_EMAIL) return;
+  const writer = personOf(env, user);
+  if (!writer) return;
+  const reader = Object.keys(PEOPLE).find(key => key !== writer);
+  const to = reader && emailOf(env, reader);
+  if (!to) return;
+  const raw = buildNoticeEmail(PEOPLE[writer], to, PEOPLE[reader], message);
+  const { EmailMessage } = await import("cloudflare:email");
+  await env.NOTIFY_EMAIL.send(new EmailMessage(NOTIFY_FROM, to, raw));
 }
 
 async function deleteMessage(request, env, url) {
@@ -768,7 +839,7 @@ async function unhidePlace(request, env, url) {
 
 /* ---------- router ---------- */
 
-async function route(request, env, url, user) {
+async function route(request, env, url, user, ctx) {
   const { pathname } = url;
   const method = request.method;
 
@@ -785,7 +856,7 @@ async function route(request, env, url, user) {
 
   if (pathname === MESSAGES_PATH) {
     if (method === "GET") return listMessages(request, env);
-    if (method === "POST") return createMessage(request, env);
+    if (method === "POST") return createMessage(request, env, user, ctx);
     if (method === "DELETE") return deleteMessage(request, env, url);
     return json(request, env, { error: "Method not allowed" }, 405);
   }
@@ -851,7 +922,7 @@ async function route(request, env, url, user) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (!isOriginAllowed(request, env)) {
@@ -867,7 +938,7 @@ export default {
       if (!user) {
         return json(request, env, { error: "需要先登录", login: `${url.origin}${LOGIN_PATH}` }, 401);
       }
-      return await route(request, env, url, user);
+      return await route(request, env, url, user, ctx);
     } catch (error) {
       console.error("API error", error);
       return json(request, env, { error: "服务器暂时无法处理请求" }, 500);
