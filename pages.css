@@ -178,3 +178,16 @@
 .matcha-home::before{content:"";position:fixed;inset:-40px;z-index:0;background:url(assets/home/home-bg.jpg) 50% 38%/cover no-repeat;filter:blur(9px) saturate(.95) brightness(1.04);pointer-events:none}
 .matcha-home .matcha-shell{position:relative;z-index:1;background:radial-gradient(ellipse 42% 38% at 50% 36%,#f7f6ecd9 0,#f7f6ec99 55%,#f7f6ec00 100%),linear-gradient(180deg,#f7f6ec66,#e9eee026 45%,#e9eee040)}
 .matcha-home .clock-kicker,.matcha-home .clock-rest,.matcha-home .clock-since,.matcha-home .matcha-head{text-shadow:0 0 10px #f7f6ec,0 0 2px #f7f6ec}
+
+/* Home page: larger day counter */
+.matcha-home .clock-kicker{font-size:12px;letter-spacing:.34em;margin-bottom:1.6vh}
+.matcha-home .clock-days strong{font-size:clamp(120px,18vw,250px)}
+.matcha-home .clock-days span{font-size:22px;margin-left:18px}
+.matcha-home .clock-rest{gap:26px;margin-top:2.6vh;font-size:15px}
+.matcha-home .clock-rest b{font-size:34px}
+.matcha-home .clock-since{font-size:12px;margin-top:2.4vh}
+@media(min-width:761px) and (max-height:800px){.matcha-home .clock-days strong{font-size:clamp(110px,15vw,200px)}.matcha-home .clock-rest b{font-size:28px}}
+@media(max-width:760px){.matcha-home .clock-days strong{font-size:140px}.matcha-home .clock-rest{gap:16px;font-size:13px}.matcha-home .clock-rest b{font-size:28px}}
+@media(min-width:761px){.matcha-home .home-doors{transform:none}}
+@media(min-width:761px) and (max-height:800px){.matcha-home .clock-days strong{font-size:clamp(110px,12vw,165px)}.matcha-home .clock-rest{margin-top:1.6vh}.matcha-home .clock-since{margin-top:1.4vh}}
+@media(min-width:761px) and (max-height:800px){.matcha-home .home-doors{transform:translateY(-30px)}}
