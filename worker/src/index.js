@@ -13,6 +13,8 @@ const FOOD_PATH = "/api/food";
 const FOOD_UPDATE_PATH = "/api/food/update";
 const FOOD_PHOTOS_PATH = "/api/food/photos";
 const FOOD_FILE_PREFIX = "/api/food/file/";
+const FEEDBACK_PATH = "/api/feedback";
+const FEEDBACK_CHECK_PATH = "/api/feedback/check";
 const SESSION_PATH = "/api/session";
 const LOGIN_PATH = "/api/login";
 const ACCESS_CERTS_TTL_MS = 60 * 60 * 1000;
@@ -25,6 +27,9 @@ const MAX_BODY_LENGTH = 65536; // 5000 Chinese characters are ~15 KB as UTF-8 JS
 const MAX_PHOTO_BYTES = 25 * 1024 * 1024;
 const MAX_PLACE_LENGTH = 50;
 const MAX_PHOTO_NAME_LENGTH = 120;
+const MAX_FEEDBACK_LENGTH = 500;
+const MAX_FEEDBACK_REASON_LENGTH = 100;
+const FEEDBACK_TYPES = ["bug", "feature", "other"];
 
 const PHOTO_TYPES = {
   jpg: "image/jpeg",
@@ -1016,6 +1021,115 @@ async function serveFoodFile(request, env, url) {
   return new Response(object.body, { headers });
 }
 
+/* ---------- feedback board ---------- */
+
+// 需求反馈: either person can file a bug report or feature request, either person can mark it
+// done or delete it. Deletes are soft and require a reason, kept in the same row so both people
+// can see who removed what and why (there's no separate "undo" for this, unlike map pins).
+async function listFeedback(request, env) {
+  const [items, deletedLog] = await Promise.all([
+    env.DB.prepare(`
+      SELECT id, type, content, created_by, created_at, done, done_at, done_by
+      FROM feedback_items
+      WHERE visible = 1
+      ORDER BY created_at ASC, id ASC
+    `).all(),
+    env.DB.prepare(`
+      SELECT id, type, content, created_by, created_at, deleted_by, deleted_at, deleted_reason
+      FROM feedback_items
+      WHERE visible = 0
+      ORDER BY deleted_at DESC, id DESC
+    `).all()
+  ]);
+  return json(request, env, {
+    items: (items.results || []).map(row => ({ ...row, done: row.done === 1 })),
+    deletedLog: deletedLog.results || []
+  });
+}
+
+async function createFeedback(request, env, user) {
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    return jsonBodyError(request, env, error);
+  }
+
+  const type = FEEDBACK_TYPES.includes(body.type) ? body.type : "";
+  const content = cleanString(body.content);
+  if (!type) {
+    return json(request, env, { error: "反馈类型无效" }, 400);
+  }
+  if (!content || content.length > MAX_FEEDBACK_LENGTH) {
+    return json(request, env, { error: `反馈内容需要 1-${MAX_FEEDBACK_LENGTH} 个字` }, 400);
+  }
+
+  const item = {
+    id: crypto.randomUUID(),
+    type,
+    content,
+    created_by: personOf(env, user) || null,
+    created_at: new Date().toISOString(),
+    done: false,
+    done_at: null,
+    done_by: null
+  };
+
+  await env.DB.prepare(`
+    INSERT INTO feedback_items (id, type, content, created_by, created_at, done, visible)
+    VALUES (?1, ?2, ?3, ?4, ?5, 0, 1)
+  `).bind(item.id, item.type, item.content, item.created_by, item.created_at).run();
+
+  return json(request, env, { ok: true, item }, 201);
+}
+
+async function checkFeedback(request, env, user) {
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    return jsonBodyError(request, env, error);
+  }
+
+  const id = cleanString(body.id);
+  if (!id || id.length > 128) {
+    return json(request, env, { error: "缺少有效的反馈 id" }, 400);
+  }
+  const done = body.done === true;
+  const result = await env.DB.prepare(`
+    UPDATE feedback_items
+    SET done = ?2, done_at = ?3, done_by = ?4
+    WHERE id = ?1 AND visible = 1
+  `).bind(id, done ? 1 : 0, done ? new Date().toISOString() : null, done ? personOf(env, user) || null : null).run();
+
+  if (!result.meta?.changes) {
+    return json(request, env, { error: "没有找到这条反馈" }, 404);
+  }
+  return json(request, env, { ok: true });
+}
+
+async function deleteFeedback(request, env, url, user) {
+  const id = cleanString(url.searchParams.get("id"));
+  const reason = cleanString(url.searchParams.get("reason"));
+  if (!id || id.length > 128) {
+    return json(request, env, { error: "缺少有效的反馈 id" }, 400);
+  }
+  if (!reason || reason.length > MAX_FEEDBACK_REASON_LENGTH) {
+    return json(request, env, { error: `删除需要填写理由，最多 ${MAX_FEEDBACK_REASON_LENGTH} 个字` }, 400);
+  }
+
+  const result = await env.DB.prepare(`
+    UPDATE feedback_items
+    SET visible = 0, deleted_by = ?2, deleted_at = ?3, deleted_reason = ?4
+    WHERE id = ?1 AND visible = 1
+  `).bind(id, personOf(env, user) || null, new Date().toISOString(), reason).run();
+
+  if (!result.meta?.changes) {
+    return json(request, env, { error: "没有找到这条反馈" }, 404);
+  }
+  return json(request, env, { ok: true });
+}
+
 /* ---------- router ---------- */
 
 async function route(request, env, url, user, ctx) {
@@ -1117,6 +1231,18 @@ async function route(request, env, url, user, ctx) {
 
   if (pathname.startsWith(FOOD_FILE_PREFIX)) {
     if (method === "GET" || method === "HEAD") return serveFoodFile(request, env, url);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === FEEDBACK_PATH) {
+    if (method === "GET") return listFeedback(request, env);
+    if (method === "POST") return createFeedback(request, env, user);
+    if (method === "DELETE") return deleteFeedback(request, env, url, user);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === FEEDBACK_CHECK_PATH) {
+    if (method === "POST") return checkFeedback(request, env, user);
     return json(request, env, { error: "Method not allowed" }, 405);
   }
 

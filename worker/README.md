@@ -53,6 +53,14 @@ Worker 不只依赖 Access 拦截：每个请求都会校验 Access 附带的 `C
   `DELETE FROM hidden_static_photos WHERE src = '<path>';`
 - `GET /api/photos/file/<key>`：读取 R2 中的照片文件。
 
+### 需求反馈
+
+- `GET /api/feedback`：返回 `{"items": [...待处理/已完成], "deletedLog": [...已删除记录]}`。
+- `POST /api/feedback`：`{"type": "bug", "content": "..."}`，`type` 必须是 `bug` / `feature` / `other`，`content` 1-500 字符。
+- `POST /api/feedback/check`：`{"id": "...", "done": true}`，标记完成/取消完成。
+- `DELETE /api/feedback?id=<id>&reason=<理由>`：软删除，`reason` 必填（最多 100 字符），删除人、时间和理由会保留在 `deletedLog` 里。恢复：
+  `UPDATE feedback_items SET visible = 1, deleted_by = NULL, deleted_at = NULL, deleted_reason = NULL WHERE id = '<id>';`
+
 ### 地图足迹
 
 - `GET /api/places`：通过上传照片确认过的地点 `{"places": [{"name", "lat", "lng"}]}`。

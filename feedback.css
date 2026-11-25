@@ -1,0 +1,69 @@
+/* 需求反馈 (feedback-board.js) — plain floating panel, left edge, kept intentionally minimal */
+
+.feedback-tab{position:fixed;z-index:70;left:0;top:56%;width:38px;padding:16px 8px;border:0;border-radius:0 11px 11px 0;background:var(--matcha-dark,#526b48);color:#fff;font:500 12px "Cormorant Garamond",serif;letter-spacing:.14em;writing-mode:vertical-rl;cursor:pointer;box-shadow:7px 9px 20px #41513930;transition:.2s}
+.feedback-tab:hover{width:44px;background:#44593c}
+
+.feedback-panel{position:fixed;z-index:80;left:0;top:0;width:min(400px,94vw);height:100vh;padding:16px;transform:translateX(-105%);transition:transform .35s cubic-bezier(.22,.75,.3,1);pointer-events:none}
+.feedback-panel.open{transform:none;pointer-events:auto}
+
+.feedback-card{position:relative;display:flex;flex-direction:column;height:100%;padding:26px 22px 18px;background:var(--milk,#f8f6ec);border:1px solid #79906c2b;box-shadow:-14px 10px 40px #27332233;color:var(--soft-ink,#3f5440);overflow:hidden}
+
+.feedback-close{position:absolute;z-index:2;right:14px;top:10px;border:0;background:transparent;color:#56704c;font:400 24px Arial;cursor:pointer;line-height:1}
+
+.feedback-card header{padding-bottom:14px;border-bottom:1px solid #79906c33}
+.feedback-card header small{font:600 9px "Cormorant Garamond",serif;letter-spacing:.22em;color:#91a284}
+.feedback-card header h2{margin:6px 0 2px;font-size:24px;font-weight:500;color:#34482f}
+.feedback-card header p{margin:0;font-size:12px;color:#7d8a75}
+
+.feedback-form-row{display:flex;gap:6px;align-items:center;margin-top:14px}
+.feedback-form-row select{flex:0 0 auto;padding:8px 4px;border:0;border-bottom:1px solid #79906c66;background:transparent;color:#34482f;font:inherit;font-size:12px}
+.feedback-form-row input{flex:1;min-width:0;padding:8px 4px;border:0;border-bottom:1px solid #79906c66;background:transparent;outline:0;color:#34482f;font:inherit;font-size:13px}
+.feedback-form-row input::placeholder{color:#a3ae9b}
+.feedback-form-row button{flex:0 0 auto;border:0;background:#728963;color:#fff;padding:8px 12px;font:inherit;font-size:12px;cursor:pointer;transition:background .2s}
+.feedback-form-row button:hover{background:#566e4e}
+.feedback-form-row button:disabled{opacity:.5;cursor:not-allowed}
+
+#feedback-status{min-height:16px;margin:6px 2px 0;font-size:11px;color:#56704c}
+
+.feedback-list{flex:1;margin:14px 0 0;padding:0 0 10px;overflow-y:auto;list-style:none}
+.feedback-list::-webkit-scrollbar{width:5px}
+.feedback-list::-webkit-scrollbar-thumb{background:#79906c55}
+
+.feedback-section-title{margin:14px 0 4px;font:600 10px "Cormorant Garamond",serif;letter-spacing:.2em;color:#8a9a82}
+
+.feedback-item{padding:10px 2px;border-bottom:1px dashed #79906c33}
+.feedback-item.done .feedback-text{color:#8a9783;text-decoration:line-through;text-decoration-color:#8a978388}
+
+.feedback-type-tag{display:inline-block;margin-bottom:4px;padding:1px 7px;border-radius:999px;background:#e3ebd8;color:#56704c;font-size:10px;letter-spacing:.06em}
+.feedback-item[data-type="bug"] .feedback-type-tag{background:#f3dfd9;color:#a0524c}
+
+.feedback-text{margin:0;font-size:14px;line-height:1.55;color:#34482f;overflow-wrap:anywhere}
+
+.feedback-meta{margin-top:4px;font-size:10px;letter-spacing:.03em;color:#96a08f}
+
+.feedback-actions{display:flex;gap:10px;margin-top:6px}
+.feedback-actions button{border:0;background:none;padding:0;color:#728963;font:inherit;font-size:11px;letter-spacing:.04em;cursor:pointer}
+.feedback-actions button:hover{text-decoration:underline;text-underline-offset:3px}
+.feedback-actions .feedback-delete-btn{color:#a2aa9b}
+.feedback-actions .feedback-delete-btn:hover{color:#a0524c}
+.feedback-item.done .feedback-done-btn{color:#56704c}
+
+.feedback-delete-form{display:flex;gap:6px;margin-top:8px}
+.feedback-delete-form.hidden{display:none}
+.feedback-delete-form input{flex:1;min-width:0;padding:6px 4px;border:0;border-bottom:1px solid #a0524c88;background:transparent;outline:0;color:#34482f;font:inherit;font-size:12px}
+.feedback-delete-form button{flex:0 0 auto;border:0;background:none;color:#728963;font:inherit;font-size:11px;cursor:pointer}
+.feedback-delete-form button[type="submit"]{color:#a0524c}
+
+.feedback-empty{padding:16px 2px;font-size:12px;color:#96a08f}
+
+.feedback-log{margin-top:4px;border-top:1px solid #79906c33}
+.feedback-log summary{padding:10px 2px;font-size:11px;letter-spacing:.06em;color:#8a9a82;cursor:pointer}
+.feedback-log ul{margin:0;padding:0 2px 6px;list-style:none;max-height:140px;overflow-y:auto}
+.feedback-log li{padding:6px 0;border-bottom:1px dotted #79906c33;font-size:11px;line-height:1.6;color:#7d8a75}
+.feedback-log li b{color:#5d6f56}
+
+@media(max-width:600px){
+  .feedback-tab{top:auto;bottom:90px}
+  .feedback-panel{padding:8px;width:100vw}
+  .feedback-card{padding:20px 16px 14px}
+}
