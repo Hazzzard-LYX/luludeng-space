@@ -258,3 +258,10 @@
 .matcha-home .clock-rest b{color:#26401f}
 .matcha-home .clock-rest i{color:#5f7a55}
 .matcha-home .clock-since{color:#2f4a2c}
+/* Home page: bigger day number, counter block moved up */
+.matcha-home .clock-days strong{font-size:clamp(140px,21vw,300px)}
+.matcha-home .clock-days span{font-size:26px}
+.matcha-home .love-clock{transform:translateY(-4vh)}
+@media(min-width:761px) and (max-height:800px){.matcha-home .clock-days strong{font-size:clamp(130px,14.5vw,200px)}.matcha-home .love-clock{transform:translateY(-2.5vh)}}
+@media(min-width:761px) and (max-width:1060px){.matcha-home .clock-days strong{font-size:clamp(130px,18vw,190px)}}
+@media(max-width:760px){.matcha-home .clock-days strong{font-size:165px}.matcha-home .love-clock{transform:translateY(-3vh)}}
