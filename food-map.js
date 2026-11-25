@@ -50,18 +50,37 @@
     return value ? value.replace(/-/g, ".") : "";
   }
 
-  // Read-only stars with half-star fill, e.g. 3.5 → three full, one half, one empty.
-  function starRow(value) {
+  // Scores have one decimal (0.1-5.0). Stars show the nearest half star: x.3-x.7 → x.5 stars,
+  // x.8-(x+1).2 → whole stars (4.8 rounds up to 5).
+  function starsFor(score) {
+    return Math.round(score * 2) / 2;
+  }
+
+  function formatScore(score) {
+    return Number(score).toFixed(1);
+  }
+
+  function fillStars(fills, score) {
+    const shown = starsFor(score);
+    fills.forEach((fill, index) => {
+      fill.style.width = `${Math.max(0, Math.min(1, shown - index)) * 100}%`;
+    });
+  }
+
+  // Read-only stars plus the exact score, e.g. 4.3 → ★★★★½ 4.3.
+  function starRow(score) {
     const row = el("span", "food-star-row");
-    row.setAttribute("aria-label", `${value} 颗星`);
+    row.setAttribute("aria-label", `${formatScore(score)} 分`);
+    const fills = [];
     for (let index = 0; index < 5; index += 1) {
       const star = el("span", "food-star");
       const fill = el("span", "food-star-fill");
-      fill.style.width = `${Math.max(0, Math.min(1, value - index)) * 100}%`;
+      fills.push(fill);
       star.append(fill);
       row.append(star);
     }
-    row.append(el("small", "", String(value)));
+    fillStars(fills, score);
+    row.append(el("small", "", formatScore(score)));
     return row;
   }
 
@@ -412,6 +431,7 @@
   // Five stars; the left half of a star gives x.5, the right half a whole star. Mouse and finger
   // work from the pointer position (tap, or drag along the row), so the halves don't need precise
   // aiming; the hidden half-star buttons are for the keyboard. Choosing the current value clears it.
+  // The chosen stars can then be fine-tuned to one decimal (renderFine).
   const starBox = document.getElementById("food-stars");
   const starTrack = el("span", "food-star-track");
   const starValue = el("span", "food-stars-value");
@@ -465,16 +485,41 @@
   starTrack.addEventListener("pointerleave", () => { if (!dragStart) paintStars(rating); });
 
   function paintStars(value) {
-    [...starBox.querySelectorAll(".food-star-fill")].forEach((fill, index) => {
-      fill.style.width = `${Math.max(0, Math.min(1, value - index)) * 100}%`;
-    });
-    starValue.textContent = value ? `${value} 星` : "";
+    fillStars([...starBox.querySelectorAll(".food-star-fill")], value);
+    starValue.textContent = value ? `${formatScore(value)} 分` : "";
+  }
+
+  // After picking stars, fine-tune to one decimal: 4.5 stars → 4.3 / 4.4 / 4.5 / 4.6 / 4.7,
+  // 4 stars → 3.8 … 4.2, 5 stars → 4.8 / 4.9 / 5.0.
+  const fineBox = el("div", "food-score-fine");
+  fineBox.setAttribute("role", "radiogroup");
+  fineBox.setAttribute("aria-label", "细调分数");
+  starBox.after(fineBox);
+
+  function renderFine() {
+    fineBox.replaceChildren();
+    fineBox.hidden = !rating;
+    if (!rating) return;
+    const base = starsFor(rating);
+    for (let step = -2; step <= 2; step += 1) {
+      const value = Math.round((base + step / 10) * 10) / 10;
+      if (value < 0.1 || value > 5) continue;
+      const chip = el("button", value === rating ? "active" : "", formatScore(value));
+      chip.type = "button";
+      chip.setAttribute("role", "radio");
+      chip.setAttribute("aria-checked", String(value === rating));
+      chip.setAttribute("aria-label", `${formatScore(value)} 分`);
+      chip.addEventListener("click", () => setRating(value));
+      fineBox.append(chip);
+    }
   }
 
   function setRating(value) {
-    rating = value;
-    starBox.querySelectorAll("button").forEach(button => button.setAttribute("aria-checked", String(Number(button.dataset.value) === value)));
-    paintStars(value);
+    rating = value ? Math.round(value * 10) / 10 : 0;
+    const shown = rating ? starsFor(rating) : 0;
+    starBox.querySelectorAll("button").forEach(button => button.setAttribute("aria-checked", String(Number(button.dataset.value) === shown)));
+    paintStars(rating);
+    renderFine();
   }
 
   function today() {

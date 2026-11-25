@@ -92,7 +92,8 @@ CREATE TABLE IF NOT EXISTS food_spots (
   lng REAL NOT NULL CHECK (lng BETWEEN -180 AND 180),
   note TEXT NOT NULL DEFAULT '' CHECK (length(note) <= 500),
   rating INTEGER CHECK (rating IS NULL OR rating BETWEEN 1 AND 5), -- old whole-star rating, superseded by stars
-  stars REAL CHECK (stars IS NULL OR (stars BETWEEN 0.5 AND 5 AND stars * 2 = CAST(stars * 2 AS INTEGER))),
+  stars REAL CHECK (stars IS NULL OR (stars BETWEEN 0.5 AND 5 AND stars * 2 = CAST(stars * 2 AS INTEGER))), -- half stars, superseded by score
+  score REAL CHECK (score IS NULL OR (score BETWEEN 0.1 AND 5 AND abs(score * 10 - round(score * 10)) < 0.000001)),
   visited_on TEXT,
   created_by TEXT,
   created_at TEXT NOT NULL,
