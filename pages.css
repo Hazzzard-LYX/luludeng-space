@@ -241,3 +241,6 @@
 .home-food-stamp:hover,.home-food-stamp:focus-visible{transform:rotate(0) scale(1.06);box-shadow:0 16px 34px #5b3a2244}
 @media(min-width:761px) and (max-width:1060px){.home-food-stamp{right:calc(5vw + 250px);width:104px;height:104px}.home-food-stamp b{font-size:19px}}
 @media(max-width:760px){.home-food-stamp,.home-food-stamp:hover{position:relative;top:auto;right:auto;bottom:auto;grid-row:6;width:100%;height:auto;margin:0 0 18px;padding:16px 20px;border-radius:0;flex-direction:row;justify-content:space-between;background:#fffaf2;outline:0;transform:none}.home-food-stamp b br{display:none}.home-food-stamp b{font-size:24px}.home-food-stamp small{order:-1}}
+/* photo wall: drag a photo onto the page (desktop) */
+.file-drop.dragover{background:#fff;border:2px dashed #566e4e;box-shadow:0 0 0 4px #91aa7833}
+.us-loop-page.photo-dragging .wall-side::after{content:"松开鼠标，放进照片墙";position:absolute;inset:14px;z-index:30;display:grid;place-items:center;border:2px dashed #f8f6ecd9;background:#2f3f2c73;color:#fff;font-size:22px;letter-spacing:.12em;pointer-events:none;backdrop-filter:blur(2px)}

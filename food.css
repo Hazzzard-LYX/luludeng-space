@@ -99,3 +99,9 @@
   .food-form,.detail-body{padding:18px 18px 22px}
   .food-row{grid-template-columns:1fr}
 }
+
+/* drag and drop (desktop) */
+.food-form .food-photo-pick.dragover{border:2px dashed var(--food-deep);background:var(--food-pale)}
+.food-page.photo-dragging:not(:has(dialog[open]))::after{content:"松开鼠标，记一家新店";position:fixed;inset:12px;z-index:2000;display:grid;place-items:center;border:2px dashed #c8784a;background:#fbfaf2cc;color:#a65a31;font-size:24px;letter-spacing:.12em;pointer-events:none;backdrop-filter:blur(2px)}
+.food-page.photo-dragging .food-detail[open]{outline:3px dashed var(--food);outline-offset:6px}
+.food-page.photo-dragging .food-detail[open] .detail-actions::after{content:"松开鼠标，把照片加到这家店";align-self:center;font-size:12px;color:var(--food-deep)}

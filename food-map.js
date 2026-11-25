@@ -499,13 +499,61 @@
     document.getElementById("food-photo-limit").textContent = `（${total} / ${MAX_PHOTOS}）`;
   }
 
-  photoInput.addEventListener("change", () => {
+  function isImage(file) {
+    return file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|avif|heic|heif)$/i.test(file.name);
+  }
+
+  function addPhotos(fileList) {
     const room = MAX_PHOTOS - (editing ? editing.photos.length : 0) - newPhotos.length;
-    const files = [...photoInput.files].filter(file => file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|avif|heic|heif)$/i.test(file.name));
+    const all = [...fileList];
+    const files = all.filter(isImage);
     files.slice(0, Math.max(0, room)).forEach(file => newPhotos.push({ file, url: URL.createObjectURL(file) }));
-    formStatus.textContent = files.length > room ? `每家店最多 ${MAX_PHOTOS} 张，多出来的没有加上。` : "";
-    photoInput.value = "";
+    formStatus.textContent = files.length > room ? `每家店最多 ${MAX_PHOTOS} 张，多出来的没有加上。`
+      : files.length < all.length ? "有些文件不是照片，没有加上。" : "";
     renderPhotoGrid();
+  }
+
+  photoInput.addEventListener("change", () => {
+    addPhotos(photoInput.files);
+    photoInput.value = "";
+  });
+
+  /* ---------- drag and drop (desktop) ---------- */
+  // Photos dragged onto the open form are added to it; dragged onto the page, they start a new spot.
+  const photoPick = document.getElementById("food-photo-pick");
+  const dropHint = matchMedia("(hover:hover) and (pointer:fine)").matches;
+  if (dropHint) photoPick.firstChild.textContent = "＋ 选择或拖入照片";
+  const hasFiles = event => [...(event.dataTransfer?.types || [])].includes("Files");
+  let dragDepth = 0;
+  function setDragging(on) {
+    document.body.classList.toggle("photo-dragging", on);
+    photoPick.classList.toggle("dragover", on);
+  }
+  window.addEventListener("dragenter", event => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    if (dragDepth++ === 0) setDragging(true);
+  });
+  window.addEventListener("dragover", event => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = ready && !pickingOnMap ? "copy" : "none";
+  });
+  window.addEventListener("dragleave", event => {
+    if (!hasFiles(event)) return;
+    if (--dragDepth <= 0) { dragDepth = 0; setDragging(false); }
+  });
+  window.addEventListener("drop", event => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    dragDepth = 0;
+    setDragging(false);
+    if (!ready || pickingOnMap) return;
+    const files = [...event.dataTransfer.files];
+    // Onto a spot's detail: add the photos to that spot. Onto the page: start a new spot.
+    if (detail.open) document.getElementById("detail-edit").click();
+    else if (!formDialog.open) document.getElementById("food-add").click();
+    addPhotos(files);
   });
 
   // Phone photos are often 5-10 MB; shrink to at most 1600 px JPEG before uploading.

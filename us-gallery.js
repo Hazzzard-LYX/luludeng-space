@@ -107,7 +107,50 @@ function updateCounter(count) {
 
 const form = document.getElementById("upload-form"), fileInput = document.getElementById("photo-file"), addressInput = document.getElementById("photo-address"),
   fileLabel = document.getElementById("file-label"), status = document.getElementById("upload-status");
-fileInput.addEventListener("change", () => { fileLabel.textContent = fileInput.files[0]?.name || "选择本地照片"; });
+const fileDrop = form.querySelector(".file-drop");
+const EMPTY_FILE_LABEL = matchMedia("(hover:hover) and (pointer:fine)").matches ? "选择或拖入一张照片" : "选择本地照片";
+fileLabel.textContent = EMPTY_FILE_LABEL;
+fileInput.addEventListener("change", () => { fileLabel.textContent = fileInput.files[0]?.name || EMPTY_FILE_LABEL; });
+
+/* ---------- drag and drop (desktop) ---------- */
+// A photo dragged anywhere onto the page opens the upload panel and lands in the file picker.
+const hasFiles = event => [...(event.dataTransfer?.types || [])].includes("Files");
+let dragDepth = 0;
+function setDragging(on) {
+  document.body.classList.toggle("photo-dragging", on);
+  fileDrop.classList.toggle("dragover", on);
+}
+window.addEventListener("dragenter", event => {
+  if (!hasFiles(event)) return;
+  event.preventDefault();
+  if (dragDepth++ === 0) {
+    if (document.body.classList.contains("manager-collapsed")) setPanel(true);
+    setDragging(true);
+  }
+});
+window.addEventListener("dragover", event => {
+  if (!hasFiles(event)) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+});
+window.addEventListener("dragleave", event => {
+  if (!hasFiles(event)) return;
+  if (--dragDepth <= 0) { dragDepth = 0; setDragging(false); }
+});
+window.addEventListener("drop", event => {
+  if (!hasFiles(event)) return;
+  event.preventDefault();
+  dragDepth = 0;
+  setDragging(false);
+  const images = [...event.dataTransfer.files].filter(file => file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|avif)$/i.test(file.name));
+  if (!images.length) { status.textContent = "拖进来的不是照片，请拖入 JPG、PNG、WEBP、GIF 或 AVIF。"; return; }
+  const picked = new DataTransfer();
+  picked.items.add(images[0]);
+  fileInput.files = picked.files;
+  fileInput.dispatchEvent(new Event("change"));
+  status.textContent = images.length > 1 ? "一次只能上传一张，已选第一张。" : "";
+  addressInput.focus();
+});
 
 /* ---------- collapsible upload panel ---------- */
 // Phones: starts collapsed and opens as a bottom sheet. Desktop: remembers the last choice in this browser.
