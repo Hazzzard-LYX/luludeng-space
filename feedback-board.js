@@ -16,6 +16,7 @@
   const feedbackCheckApiUrl = window.LULU_API.url("/api/feedback/check");
   const MAX_FEEDBACK_LENGTH = 500;
   const MAX_REASON_LENGTH = 100;
+  const MAX_DONE_NOTE_LENGTH = 200;
 
   const PERSON_NAMES = { lulu: "噜噜", dengdeng: "噔噔" };
   const TYPE_LABELS = { bug: "Bug", feature: "功能建议", other: "其他" };
@@ -64,48 +65,73 @@
     const metaParts = [personName(item.created_by) || "匿名", formatTime(item.created_at)];
     if (item.done) metaParts.push(`${personName(item.done_by) || ""} 完成于 ${formatTime(item.done_at)}`);
     row.append(element("div", "feedback-meta", metaParts.filter(Boolean).join(" · ")));
+    if (item.done && item.done_note) {
+      const note = element("p", "feedback-done-note");
+      note.append(element("b", "", "完成总结"), document.createTextNode(item.done_note));
+      row.append(note);
+    }
 
     const actions = element("div", "feedback-actions");
     const doneButton = element("button", "feedback-done-btn", item.done ? "已完成，点击恢复" : "标记完成");
     doneButton.type = "button";
-    doneButton.addEventListener("click", () => toggleDone(item.id, !item.done));
     const deleteButton = element("button", "feedback-delete-btn", "删除");
     deleteButton.type = "button";
     actions.append(doneButton, deleteButton);
     row.append(actions);
 
-    const deleteForm = element("form", "feedback-delete-form hidden");
-    const reasonInput = element("input");
-    reasonInput.type = "text";
-    reasonInput.placeholder = "删除理由（必填）";
-    reasonInput.maxLength = MAX_REASON_LENGTH;
-    reasonInput.required = true;
-    const confirmButton = element("button", "", "确认删除");
-    confirmButton.type = "submit";
-    const cancelButton = element("button", "", "取消");
-    cancelButton.type = "button";
-    deleteForm.append(reasonInput, confirmButton, cancelButton);
-    row.append(deleteForm);
+    // Marking done asks what was actually done; deleting asks why. Only one of the two forms is open at a time.
+    const doneForm = inlineForm("feedback-done-form", "做了什么（必填）", MAX_DONE_NOTE_LENGTH, "确认完成", note => toggleDone(item.id, true, note));
+    const deleteForm = inlineForm("feedback-delete-form", "删除理由（必填）", MAX_REASON_LENGTH, "确认删除", reason => deleteFeedback(item.id, reason));
+    row.append(doneForm.form, deleteForm.form);
 
-    deleteButton.addEventListener("click", () => {
-      deleteForm.classList.remove("hidden");
-      reasonInput.focus();
-    });
-    cancelButton.addEventListener("click", () => {
-      deleteForm.classList.add("hidden");
-      reasonInput.value = "";
-    });
-    deleteForm.addEventListener("submit", event => {
-      event.preventDefault();
-      const reason = reasonInput.value.trim();
-      if (!reason) {
-        reasonInput.focus();
+    doneButton.addEventListener("click", () => {
+      if (item.done) {
+        toggleDone(item.id, false);
         return;
       }
-      deleteFeedback(item.id, reason);
+      deleteForm.close();
+      doneForm.open();
+    });
+    deleteButton.addEventListener("click", () => {
+      doneForm.close();
+      deleteForm.open();
     });
 
     return row;
+  }
+
+  function inlineForm(className, placeholder, maxLength, submitLabel, onSubmit) {
+    const form = element("form", `feedback-inline-form ${className} hidden`);
+    const input = element("input");
+    input.type = "text";
+    input.placeholder = placeholder;
+    input.maxLength = maxLength;
+    input.required = true;
+    const confirmButton = element("button", "", submitLabel);
+    confirmButton.type = "submit";
+    const cancelButton = element("button", "", "取消");
+    cancelButton.type = "button";
+    form.append(input, confirmButton, cancelButton);
+
+    const open = () => {
+      form.classList.remove("hidden");
+      input.focus();
+    };
+    const close = () => {
+      form.classList.add("hidden");
+      input.value = "";
+    };
+    cancelButton.addEventListener("click", close);
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const value = input.value.trim();
+      if (!value) {
+        input.focus();
+        return;
+      }
+      onSubmit(value);
+    });
+    return { form, open, close };
   }
 
   function logRow(entry) {
@@ -157,17 +183,18 @@
     }
   }
 
-  async function toggleDone(id, done) {
+  async function toggleDone(id, done, note) {
     try {
       const response = await window.LULU_API.request(feedbackCheckApiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, done })
+        body: JSON.stringify(done ? { id, done, note } : { id, done })
       });
-      if (!response.ok) throw new Error();
+      const result = await window.LULU_API.readJson(response);
+      if (!response.ok) throw new Error(result.error || "操作失败");
       await loadFeedback();
-    } catch {
-      feedbackStatus.textContent = "操作失败，请稍后再试。";
+    } catch (error) {
+      feedbackStatus.textContent = error.message || "操作失败，请稍后再试。";
     }
   }
 
