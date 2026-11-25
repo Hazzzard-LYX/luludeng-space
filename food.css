@@ -1,0 +1,101 @@
+/* 美食地图 (food.html). Matcha paper like the other pages, with a warm terracotta accent for food. */
+.food-page{--food:#c8784a;--food-deep:#a65a31;--food-pale:#f6e6d8}
+.food-layout{height:calc(100vh - 76px);display:grid;grid-template-columns:340px 1fr;gap:18px;padding:18px;background:#eef1e7}
+.food-sidebar{display:flex;flex-direction:column;min-height:0;background:#f9f8ef;border:1px solid #7d916f26;padding:30px 22px 16px}
+.food-intro h1{font-size:39px;line-height:1.18;font-weight:500;margin:10px 0 8px}
+.food-intro p{font-size:12px;color:#788472;margin:0 0 18px}
+.food-add-button{display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border:0;background:var(--food);color:#fffaf2;font:inherit;font-size:14px;letter-spacing:.08em;cursor:pointer;box-shadow:0 6px 16px #a65a3133;transition:background .2s,transform .2s}
+.food-add-button span{font-size:18px;line-height:1}
+.food-add-button:hover{background:var(--food-deep);transform:translateY(-1px)}
+.food-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;padding:8px 10px;background:var(--food-pale);color:var(--food-deep);font-size:12px}
+.food-filter[hidden]{display:none}
+.food-filter button{border:0;background:none;color:var(--food-deep);font:inherit;font-size:11px;text-decoration:underline;cursor:pointer}
+.food-count{margin:16px 0 8px;font-size:10px;letter-spacing:.12em;color:#84927d}
+.food-count b{color:var(--food-deep);font-size:14px}
+.food-list{list-style:none;margin:0 -8px;padding:0 8px;overflow:auto;flex:1;min-height:0}
+.food-list li+li{margin-top:8px}
+.food-item{display:flex;align-items:center;gap:12px;width:100%;padding:8px;border:1px solid #7385681f;background:#fffdf6;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.food-item:hover{border-color:#c8784a66;box-shadow:0 6px 16px #6d4a3014}
+.food-thumb{flex:none;width:58px;height:58px;overflow:hidden;background:var(--food-pale);display:grid;place-items:center}
+.food-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.food-thumb i,.food-marker i{font-style:normal;color:var(--food-deep);font-size:18px}
+.food-item-text{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.food-item-text b{font-weight:600;font-size:14px;color:#3f5440;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.food-item-text small{font-size:11px;color:#84927d}
+.food-item-stars{font-style:normal;font-size:11px;letter-spacing:1px;color:var(--food)}
+.food-item-count{flex:none;font-size:10px;color:#9aa58f}
+.food-empty{padding:22px 6px;font-size:12px;line-height:1.9;color:#84927d}
+
+/* map markers: a round photo (or 食) with a count */
+.food-map-stage{min-height:0}
+.food-marker-wrap{background:none;border:0}
+.food-marker{position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#fffaf2;border:3px solid #fffaf2;box-shadow:0 0 0 2px var(--food),0 6px 14px #5b3a2240;overflow:visible;transition:transform .2s}
+.food-marker-wrap .food-marker img{position:absolute;inset:0;width:100%!important;height:100%!important;border-radius:50%;object-fit:cover;display:block}
+.food-marker b{position:absolute;right:-8px;top:-7px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--food);color:#fff;font:600 11px/20px system-ui,sans-serif;text-align:center;box-shadow:0 2px 6px #5b3a2240}
+.food-marker.active{transform:scale(1.18);box-shadow:0 0 0 3px var(--food-deep),0 8px 18px #5b3a2259}
+.food-marker-wrap:hover .food-marker{transform:scale(1.12)}
+
+/* dialogs */
+.food-dialog{width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 32px);padding:0;border:0;background:#fbfaf2;color:#3f5440;box-shadow:0 24px 70px #1f2a1c59;overflow:auto}
+.food-dialog::backdrop{background:#1f2a1c66;backdrop-filter:blur(3px)}
+.food-dialog-close{position:sticky;top:0;float:right;z-index:2;width:40px;height:40px;border:0;background:#fbfaf2e6;color:#6c7f65;font-size:22px;cursor:pointer}
+.detail-photos{background:#2c3328}
+.detail-main{display:block;width:100%;max-height:60vh;object-fit:contain;background:#2c3328}
+.detail-strip{display:flex;gap:6px;padding:8px;overflow-x:auto}
+.detail-strip button{flex:none;width:54px;height:54px;padding:0;border:2px solid transparent;background:none;cursor:pointer;opacity:.65}
+.detail-strip button.active{border-color:var(--food);opacity:1}
+.detail-strip img{width:100%;height:100%;object-fit:cover;display:block}
+.detail-body{padding:22px 26px 24px}
+.detail-body small{font-size:11px;letter-spacing:.08em;color:#84927d}
+.detail-body h2{font-size:28px;font-weight:500;margin:6px 0 6px}
+.detail-meta{margin:0;font-size:12px;color:var(--food)}
+.detail-note{margin:14px 0 0;font-size:14px;line-height:1.9;white-space:pre-wrap}
+.detail-note:empty{display:none}
+.detail-actions{display:flex;gap:10px;margin-top:22px}
+.detail-actions button{height:38px;padding:0 16px;border:1px solid #73856840;background:#fffdf6;color:#4e624a;font:inherit;font-size:12px;cursor:pointer}
+.detail-actions button:hover{border-color:#728963}
+.detail-actions .danger{margin-left:auto;color:#a05048;border-color:#a0504833}
+
+.food-form{display:flex;flex-direction:column;gap:14px;padding:22px 26px 26px}
+.food-form>small{font:600 9px "Cormorant Garamond",serif;letter-spacing:.24em;color:#84927d}
+.food-form h2{font-size:26px;font-weight:500;margin:-6px 0 2px}
+.food-form label,.food-city-field>label,.food-rating-field>span,.food-photo-field>span{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#5c6f55}
+.food-form label span,.food-photo-field em{font-style:normal;font-size:10px;color:#9aa58f}
+.food-form label>span{display:inline}
+.food-form input[type=text],.food-form input[type=date],.food-form textarea{width:100%;border:1px solid #7385683d;background:#fffdf6;padding:10px 12px;font:inherit;font-size:13px;color:#3f5440;outline:0;border-radius:0}
+.food-form textarea{resize:vertical;line-height:1.7}
+.food-form input:focus,.food-form textarea:focus{border-color:#728963;box-shadow:0 0 0 3px #91aa7826}
+.food-city-search{margin-top:0}
+.food-link-button{align-self:flex-start;margin-top:6px;padding:0;border:0;background:none;color:#7b8c70;font:inherit;font-size:11px;text-decoration:underline;cursor:pointer}
+.food-picked{margin:4px 0 0;font-size:12px;color:var(--food-deep)}
+.food-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.food-rating-field{display:flex;flex-direction:column;gap:6px}
+.food-stars{display:flex;gap:2px;height:42px;align-items:center}
+.food-stars button{border:0;background:none;padding:0 2px;font-size:24px;line-height:1;color:#d9d6c6;cursor:pointer;transition:color .15s,transform .15s}
+.food-stars button.on{color:var(--food)}
+.food-stars button:hover{transform:scale(1.15)}
+.food-photo-field{display:flex;flex-direction:column;gap:8px}
+.food-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+.food-photo-grid:empty{display:none}
+.food-photo-tile{position:relative;aspect-ratio:1;background:var(--food-pale)}
+.food-photo-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.food-photo-tile.new{outline:2px solid #c8784a55;outline-offset:-2px}
+.food-photo-tile button{position:absolute;top:3px;right:3px;width:22px;height:22px;border:0;border-radius:50%;background:#1f2a1cb3;color:#fff;font-size:14px;line-height:22px;padding:0;cursor:pointer}
+.food-form .food-photo-pick{display:flex;flex-direction:row;align-items:center;justify-content:center;height:44px;border:1px dashed #c8784a80;background:#fffaf2;color:var(--food-deep);font-size:13px;cursor:pointer}
+.food-photo-pick[hidden]{display:none}
+.food-photo-pick input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.food-form-status{min-height:1em;margin:0;font-size:12px;color:var(--food-deep)}
+.food-form-status:empty{display:none}
+.food-submit{height:46px;border:0;background:var(--food);color:#fffaf2;font:inherit;font-size:14px;letter-spacing:.1em;cursor:pointer}
+.food-submit:disabled{opacity:.6;cursor:wait}
+
+@media(max-width:760px){
+  .food-layout{height:auto;min-height:calc(100vh - 76px);grid-template-columns:1fr;padding:9px;gap:9px}
+  .food-sidebar{padding:18px 16px 12px;order:2}
+  .food-map-stage{order:1;height:62vw;min-height:320px}
+  .food-intro h1{font-size:27px;margin:4px 0}
+  .food-intro p{margin-bottom:12px}
+  .food-list{overflow:visible}
+  .food-form,.detail-body{padding:18px 18px 22px}
+  .food-row{grid-template-columns:1fr}
+}

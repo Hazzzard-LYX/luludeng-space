@@ -9,6 +9,10 @@ const WISH_ALLOWANCE_PATH = "/api/wishes/allowance";
 const PINS_PATH = "/api/pins";
 const PIN_RESTORE_PATH = "/api/pins/restore";
 const PIN_HIDDEN_PATH = "/api/pins/hidden";
+const FOOD_PATH = "/api/food";
+const FOOD_UPDATE_PATH = "/api/food/update";
+const FOOD_PHOTOS_PATH = "/api/food/photos";
+const FOOD_FILE_PREFIX = "/api/food/file/";
 const SESSION_PATH = "/api/session";
 const LOGIN_PATH = "/api/login";
 const ACCESS_CERTS_TTL_MS = 60 * 60 * 1000;
@@ -837,6 +841,178 @@ async function unhidePlace(request, env, url) {
   return json(request, env, { ok: true });
 }
 
+/* ---------- food map ---------- */
+
+// A food spot is a place we ate (name, city + optional street address, note, rating, date) with up
+// to MAX_FOOD_PHOTOS photos stored in R2 under food/. The map pins spots at their city's position.
+const MAX_FOOD_NAME_LENGTH = 40;
+const MAX_FOOD_CITY_LENGTH = 50;
+const MAX_FOOD_ADDRESS_LENGTH = 100;
+const MAX_FOOD_NOTE_LENGTH = 500;
+const MAX_FOOD_PHOTOS = 9;
+const MAX_FOOD_PHOTO_BYTES = 15 * 1024 * 1024;
+
+function foodFileUrl(url, objectKey) {
+  return `${url.origin}${FOOD_FILE_PREFIX}${objectKey.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+// Validates the editable fields of a spot. Returns { spot } or { error }.
+function readFoodFields(body) {
+  const name = cleanString(body.name);
+  const city = cleanString(body.city);
+  const address = cleanString(body.address);
+  const note = cleanString(body.note);
+  const lat = Number(body.lat);
+  const lng = Number(body.lng);
+  const rating = body.rating == null || body.rating === "" ? null : Number(body.rating);
+  const visitedOn = cleanString(body.visited_on);
+  if (!name || name.length > MAX_FOOD_NAME_LENGTH) return { error: `店名需要 1-${MAX_FOOD_NAME_LENGTH} 个字` };
+  if (!city || city.length > MAX_FOOD_CITY_LENGTH) return { error: "请选择城市" };
+  if (address.length > MAX_FOOD_ADDRESS_LENGTH) return { error: `详细地址最多 ${MAX_FOOD_ADDRESS_LENGTH} 个字` };
+  if (note.length > MAX_FOOD_NOTE_LENGTH) return { error: `评价最多 ${MAX_FOOD_NOTE_LENGTH} 个字` };
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90) return { error: "地图位置无效" };
+  if (rating !== null && !(Number.isInteger(rating) && rating >= 1 && rating <= 5)) return { error: "评分需要 1-5 颗星" };
+  if (visitedOn && !/^\d{4}-\d{2}-\d{2}$/.test(visitedOn)) return { error: "日期格式无效" };
+  return {
+    spot: {
+      name, city, address, note, rating,
+      lat: Math.round(lat * 1e6) / 1e6,
+      lng: wrapLongitude(lng),
+      visited_on: visitedOn || null
+    }
+  };
+}
+
+async function listFood(request, env, url) {
+  const [spots, photos] = await Promise.all([
+    env.DB.prepare(`
+      SELECT id, name, city, address, lat, lng, note, rating, visited_on, created_by, created_at
+      FROM food_spots WHERE visible = 1
+      ORDER BY COALESCE(visited_on, substr(created_at, 1, 10)) DESC, created_at DESC
+    `).all(),
+    env.DB.prepare(`
+      SELECT p.id, p.spot_id, p.object_key FROM food_photos p
+      JOIN food_spots s ON s.id = p.spot_id AND s.visible = 1
+      WHERE p.visible = 1 ORDER BY p.created_at ASC, p.id ASC
+    `).all()
+  ]);
+  const bySpot = new Map();
+  for (const photo of photos.results || []) {
+    if (!bySpot.has(photo.spot_id)) bySpot.set(photo.spot_id, []);
+    bySpot.get(photo.spot_id).push({ id: photo.id, src: foodFileUrl(url, photo.object_key) });
+  }
+  return json(request, env, {
+    spots: (spots.results || []).map(spot => ({ ...spot, photos: bySpot.get(spot.id) || [] }))
+  });
+}
+
+async function createFood(request, env, user) {
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (bodyError) {
+    return jsonBodyError(request, env, bodyError);
+  }
+  const { spot, error } = readFoodFields(body);
+  if (error) return json(request, env, { error }, 400);
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+  const createdBy = personOf(env, user) || null;
+  await env.DB.prepare(`
+    INSERT INTO food_spots (id, name, city, address, lat, lng, note, rating, visited_on, created_by, created_at, visible)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 1)
+  `).bind(id, spot.name, spot.city, spot.address, spot.lat, spot.lng, spot.note, spot.rating, spot.visited_on, createdBy, createdAt).run();
+  return json(request, env, { ok: true, spot: { id, ...spot, created_by: createdBy, created_at: createdAt, photos: [] } }, 201);
+}
+
+async function updateFood(request, env) {
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (bodyError) {
+    return jsonBodyError(request, env, bodyError);
+  }
+  const id = cleanString(body.id);
+  if (!id || id.length > 128) return json(request, env, { error: "缺少有效的美食 id" }, 400);
+  const { spot, error } = readFoodFields(body);
+  if (error) return json(request, env, { error }, 400);
+  const result = await env.DB.prepare(`
+    UPDATE food_spots SET name = ?2, city = ?3, address = ?4, lat = ?5, lng = ?6, note = ?7, rating = ?8, visited_on = ?9
+    WHERE id = ?1 AND visible = 1
+  `).bind(id, spot.name, spot.city, spot.address, spot.lat, spot.lng, spot.note, spot.rating, spot.visited_on).run();
+  if (!result.meta?.changes) return json(request, env, { error: "没有找到这家店" }, 404);
+  return json(request, env, { ok: true });
+}
+
+async function deleteFood(request, env, url) {
+  const id = cleanString(url.searchParams.get("id"));
+  if (!id || id.length > 128) return json(request, env, { error: "缺少有效的美食 id" }, 400);
+  const result = await env.DB.prepare("UPDATE food_spots SET visible = 0 WHERE id = ?1 AND visible = 1").bind(id).run();
+  if (!result.meta?.changes) return json(request, env, { error: "没有找到这家店" }, 404);
+  return json(request, env, { ok: true });
+}
+
+async function uploadFoodPhoto(request, env, url) {
+  const spotId = cleanString(url.searchParams.get("spot"));
+  const filename = cleanString(url.searchParams.get("filename"));
+  const extension = filename.includes(".") ? filename.split(".").pop().toLowerCase() : "";
+  const contentType = PHOTO_TYPES[extension];
+  const size = Number(request.headers.get("Content-Length") || 0);
+  if (!spotId || spotId.length > 128) return json(request, env, { error: "缺少有效的美食 id" }, 400);
+  if (!contentType) return json(request, env, { error: "暂不支持这种格式，请选择 JPG、PNG、WEBP、GIF 或 AVIF。" }, 415);
+  if (!size || !request.body) return json(request, env, { error: "没有收到照片内容" }, 411);
+  if (size > MAX_FOOD_PHOTO_BYTES) return json(request, env, { error: "照片不能超过 15MB。" }, 413);
+
+  const spot = await env.DB.prepare(`
+    SELECT (SELECT COUNT(*) FROM food_photos WHERE spot_id = ?1 AND visible = 1) AS photo_count
+    FROM food_spots WHERE id = ?1 AND visible = 1
+  `).bind(spotId).first();
+  if (!spot) return json(request, env, { error: "没有找到这家店" }, 404);
+  if (spot.photo_count >= MAX_FOOD_PHOTOS) return json(request, env, { error: `每家店最多 ${MAX_FOOD_PHOTOS} 张照片` }, 409);
+
+  const id = crypto.randomUUID();
+  const objectKey = `food/${id}.${extension === "jpeg" ? "jpg" : extension}`;
+  await env.PHOTOS.put(objectKey, request.body, {
+    httpMetadata: { contentType, cacheControl: "private, max-age=31536000, immutable" },
+    customMetadata: { spot: spotId }
+  });
+  await env.DB.prepare(`
+    INSERT INTO food_photos (id, spot_id, object_key, content_type, size, created_at, visible)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1)
+  `).bind(id, spotId, objectKey, contentType, size, new Date().toISOString()).run();
+  return json(request, env, { ok: true, photo: { id, src: foodFileUrl(url, objectKey) } }, 201);
+}
+
+async function deleteFoodPhoto(request, env, url) {
+  const id = cleanString(url.searchParams.get("id"));
+  if (!id || id.length > 128) return json(request, env, { error: "缺少有效的照片 id" }, 400);
+  const result = await env.DB.prepare("UPDATE food_photos SET visible = 0 WHERE id = ?1 AND visible = 1").bind(id).run();
+  if (!result.meta?.changes) return json(request, env, { error: "没有找到这张照片" }, 404);
+  return json(request, env, { ok: true });
+}
+
+async function serveFoodFile(request, env, url) {
+  let objectKey;
+  try {
+    objectKey = decodeURIComponent(url.pathname.slice(FOOD_FILE_PREFIX.length));
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
+  if (!objectKey.startsWith("food/") || objectKey.includes("..")) return new Response("Not found", { status: 404 });
+  const row = await env.DB.prepare("SELECT visible FROM food_photos WHERE object_key = ?1").bind(objectKey).first();
+  if (!row || !row.visible) return new Response("Not found", { status: 404 });
+
+  const object = await env.PHOTOS.get(objectKey, { onlyIf: request.headers, range: request.headers });
+  if (!object) return new Response("Not found", { status: 404 });
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("ETag", object.httpEtag);
+  headers.set("Cache-Control", "private, max-age=31536000, immutable");
+  headers.set("X-Content-Type-Options", "nosniff");
+  if (!("body" in object) || !object.body) return new Response(null, { status: 304, headers });
+  return new Response(object.body, { headers });
+}
+
 /* ---------- router ---------- */
 
 async function route(request, env, url, user, ctx) {
@@ -915,6 +1091,29 @@ async function route(request, env, url, user, ctx) {
   if (pathname === PIN_HIDDEN_PATH) {
     if (method === "POST") return hidePlace(request, env);
     if (method === "DELETE") return unhidePlace(request, env, url);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === FOOD_PATH) {
+    if (method === "GET") return listFood(request, env, url);
+    if (method === "POST") return createFood(request, env, user);
+    if (method === "DELETE") return deleteFood(request, env, url);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === FOOD_UPDATE_PATH) {
+    if (method === "POST") return updateFood(request, env);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname === FOOD_PHOTOS_PATH) {
+    if (method === "POST") return uploadFoodPhoto(request, env, url);
+    if (method === "DELETE") return deleteFoodPhoto(request, env, url);
+    return json(request, env, { error: "Method not allowed" }, 405);
+  }
+
+  if (pathname.startsWith(FOOD_FILE_PREFIX)) {
+    if (method === "GET" || method === "HEAD") return serveFoodFile(request, env, url);
     return json(request, env, { error: "Method not allowed" }, 405);
   }
 

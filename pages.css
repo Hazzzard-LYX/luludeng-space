@@ -233,3 +233,11 @@
 @media(max-width:760px){.matcha-home .clock-kicker{font-size:14px;letter-spacing:.22em}}
 .matcha-home .clock-kicker{display:inline-block;padding:7px 18px 7px 24px;border-radius:999px;background:#f7f6ecc7;box-shadow:0 4px 18px #3c4c3414;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);text-shadow:none}
 @media(min-width:761px) and (max-width:1060px){.matcha-home .clock-kicker{font-size:12px;letter-spacing:.16em;padding:6px 12px 6px 14px}}
+/* home: round 美食地图 sticker under the 留言板 note */
+.home-food-stamp{position:absolute;z-index:4;top:auto;bottom:calc(30vh - 30px);right:calc(5vw + 300px);width:124px;height:124px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:radial-gradient(circle,#fffaf2 0 55%,#f6e6d8 56% 100%);border:2px dashed #c8784a;outline:5px solid #fffaf2;color:#a65a31;text-align:center;box-shadow:0 12px 28px #5b3a2233;transform:rotate(-10deg);transition:transform .25s,box-shadow .25s}
+.home-food-stamp small{font:600 8px "Cormorant Garamond",serif;letter-spacing:.2em;color:#c08460}
+.home-food-stamp b{font-family:"KaiTi","STKaiti",serif;font-size:24px;line-height:1.1;font-weight:600;color:#8f4c28}
+.home-food-stamp i{font-style:normal;font-size:14px;line-height:1}
+.home-food-stamp:hover,.home-food-stamp:focus-visible{transform:rotate(0) scale(1.06);box-shadow:0 16px 34px #5b3a2244}
+@media(min-width:761px) and (max-width:1060px){.home-food-stamp{right:calc(5vw + 250px);width:104px;height:104px}.home-food-stamp b{font-size:19px}}
+@media(max-width:760px){.home-food-stamp,.home-food-stamp:hover{position:relative;top:auto;right:auto;bottom:auto;grid-row:6;width:100%;height:auto;margin:0 0 18px;padding:16px 20px;border-radius:0;flex-direction:row;justify-content:space-between;background:#fffaf2;outline:0;transform:none}.home-food-stamp b br{display:none}.home-food-stamp b{font-size:24px}.home-food-stamp small{order:-1}}

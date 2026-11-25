@@ -1,0 +1,59 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>美食地图｜LuLu & DengDeng</title><link rel="stylesheet" href="pages.css?v=20261125a"><link rel="stylesheet" href="vendor/leaflet/leaflet.css"><link rel="stylesheet" href="food.css?v=20261125a"><script src="auth.js"></script></head>
+<body class="page matcha-page food-page"><header class="page-head"><a class="back" href="index.html">← 返回首页</a><a class="matcha-logo" href="index.html">噜噜 <b>&amp;</b> 噔噔</a><a href="places.html" class="next-link">地图册 →</a></header>
+<main class="food-layout">
+  <aside class="food-sidebar">
+    <div class="food-intro"><span class="kicker">05 / FOOD</span><h1>美食地图</h1><p>一起吃过的每一顿好吃的。</p></div>
+    <button id="food-add" class="food-add-button" type="button"><span>＋</span> 记一家店</button>
+    <div class="food-filter" id="food-filter" hidden><span id="food-filter-label"></span><button id="food-filter-clear" type="button">显示全部</button></div>
+    <p class="food-count"><b id="food-count">0</b> 家店 · <b id="food-city-count">0</b> 座城市</p>
+    <ol id="food-list" class="food-list" aria-label="我们吃过的店"><li class="food-empty">正在翻开美食地图……</li></ol>
+  </aside>
+  <section class="offline-map-stage food-map-stage" id="food-map-stage">
+    <div id="offline-map" aria-label="美食地图"></div>
+    <div class="offline-zoom"><button id="zoom-out" type="button" aria-label="缩小">−</button><span id="zoom-label">世界</span><button id="zoom-in" type="button" aria-label="放大">＋</button></div>
+    <div class="map-mode" id="map-mode">地图加载中…</div>
+    <small class="map-credit">Natural Earth · DataV.GeoAtlas · GeoNames</small>
+  </section>
+</main>
+
+<dialog id="food-detail" class="food-dialog food-detail" aria-labelledby="detail-name">
+  <button class="food-dialog-close" type="button" data-close aria-label="关闭">×</button>
+  <div class="detail-photos" id="detail-photos"></div>
+  <div class="detail-body">
+    <small id="detail-city"></small>
+    <h2 id="detail-name"></h2>
+    <p class="detail-meta" id="detail-meta"></p>
+    <p class="detail-note" id="detail-note"></p>
+    <div class="detail-actions"><button id="detail-edit" type="button">编辑 / 加照片</button><button id="detail-delete" class="danger" type="button">删除这家店</button></div>
+  </div>
+</dialog>
+
+<dialog id="food-form-dialog" class="food-dialog food-form-dialog" aria-labelledby="form-title">
+  <button class="food-dialog-close" type="button" data-close aria-label="关闭">×</button>
+  <form id="food-form" class="food-form" novalidate>
+    <small>FOOD NOTE</small>
+    <h2 id="form-title">记一家店</h2>
+    <label>店名 <input id="food-name" type="text" maxlength="40" placeholder="比如：阿娘面馆" required></label>
+    <div class="food-city-field">
+      <label for="city-search-input">城市</label>
+      <div class="city-search food-city-search" role="combobox" aria-haspopup="listbox" aria-owns="city-results" aria-expanded="false"><input id="city-search-input" type="search" placeholder="搜索城市，例如 上海、东京" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-controls="city-results"><ul id="city-results" class="city-results" role="listbox" hidden></ul></div>
+      <button id="pick-on-map" class="food-link-button" type="button">找不到？在地图上点选位置</button>
+      <p id="food-city-picked" class="food-picked" hidden></p>
+    </div>
+    <label>详细地址 <span>（选填）</span><input id="food-address" type="text" maxlength="100" placeholder="比如：黄浦区思南路 xx 号"></label>
+    <div class="food-row">
+      <label>日期 <input id="food-date" type="date"></label>
+      <div class="food-rating-field"><span>好吃程度</span><div class="food-stars" id="food-stars" role="radiogroup" aria-label="评分"></div></div>
+    </div>
+    <label>吃了什么 / 评价 <span>（选填）</span><textarea id="food-note" maxlength="500" rows="3" placeholder="招牌菜、谁最爱吃、下次还想点什么……"></textarea></label>
+    <div class="food-photo-field">
+      <span>照片 <em id="food-photo-limit">（最多 9 张）</em></span>
+      <div class="food-photo-grid" id="food-photo-grid"></div>
+      <label class="food-photo-pick" id="food-photo-pick">＋ 选择照片<input id="food-photos" type="file" accept="image/*" multiple></label>
+    </div>
+    <p id="food-form-status" class="food-form-status" role="status" aria-live="polite"></p>
+    <button id="food-submit" class="food-submit" type="submit">保存</button>
+  </form>
+</dialog>
+
+<script src="vendor/leaflet/leaflet.js"></script><script src="vendor/topojson/topojson-client.min.js"></script><script src="geo/cities.js?v=20261123b"></script><script src="api.js?v=20261123d"></script><script src="food-map.js?v=20261125a"></script></body></html>
