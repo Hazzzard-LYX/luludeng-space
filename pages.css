@@ -244,3 +244,10 @@
 /* photo wall: drag a photo onto the page (desktop) */
 .file-drop.dragover{background:#fff;border:2px dashed #566e4e;box-shadow:0 0 0 4px #91aa7833}
 .us-loop-page.photo-dragging .wall-side::after{content:"松开鼠标，放进照片墙";position:absolute;inset:14px;z-index:30;display:grid;place-items:center;border:2px dashed #f8f6ecd9;background:#2f3f2c73;color:#fff;font-size:22px;letter-spacing:.12em;pointer-events:none;backdrop-filter:blur(2px)}
+/* 城市回忆: delete a photo from its frame (shown on hover, always visible on touch screens) */
+.custom-place-page .custom-place-gallery figure .place-photo-delete{position:absolute;z-index:3;top:26px;right:26px;height:30px;padding:0 12px;border:0;background:#1b140ee0;color:#f1dfc0;font:inherit;font-size:12px;letter-spacing:.08em;cursor:pointer;opacity:0;transform:translateY(-4px);transition:opacity .2s,transform .2s,background .2s}
+.custom-place-page .custom-place-gallery figure:hover .place-photo-delete,.custom-place-page .custom-place-gallery figure .place-photo-delete:focus-visible{opacity:1;transform:none}
+.custom-place-page .custom-place-gallery figure .place-photo-delete:hover{background:#9c3a2e}
+.custom-place-page .custom-place-gallery figure .place-photo-delete:disabled{cursor:wait;opacity:1}
+@media(hover:none){.custom-place-page .custom-place-gallery figure .place-photo-delete{opacity:.92;transform:none}}
+.custom-place-page .custom-place-gallery figure.removing{opacity:0;transform:scale(.92);transition:opacity .25s,transform .25s}
