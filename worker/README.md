@@ -57,7 +57,7 @@ Worker 不只依赖 Access 拦截：每个请求都会校验 Access 附带的 `C
 
 - `GET /api/feedback`：返回 `{"items": [...待处理/已完成], "deletedLog": [...已删除记录]}`。
 - `POST /api/feedback`：`{"type": "bug", "content": "..."}`，`type` 必须是 `bug` / `feature` / `other`，`content` 1-500 字符。
-- `POST /api/feedback/check`：`{"id": "...", "done": true}`，标记完成/取消完成。
+- `POST /api/feedback/check`：`{"id": "...", "done": true, "note": "做了什么"}`，标记完成（`note` 必填，最多 200 字，显示为“完成总结”）；`{"id": "...", "done": false}` 取消完成并清空总结。
 - `DELETE /api/feedback?id=<id>&reason=<理由>`：软删除，`reason` 必填（最多 100 字符），删除人、时间和理由会保留在 `deletedLog` 里。恢复：
   `UPDATE feedback_items SET visible = 1, deleted_by = NULL, deleted_at = NULL, deleted_reason = NULL WHERE id = '<id>';`
 

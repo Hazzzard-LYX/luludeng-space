@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS feedback_items (
   done INTEGER NOT NULL DEFAULT 0 CHECK (done IN (0, 1)),
   done_at TEXT,
   done_by TEXT,
+  done_note TEXT CHECK (done_note IS NULL OR length(done_note) <= 200),
   visible INTEGER NOT NULL DEFAULT 1 CHECK (visible IN (0, 1)),
   deleted_by TEXT,
   deleted_at TEXT,

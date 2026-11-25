@@ -29,6 +29,7 @@ const MAX_PLACE_LENGTH = 50;
 const MAX_PHOTO_NAME_LENGTH = 120;
 const MAX_FEEDBACK_LENGTH = 500;
 const MAX_FEEDBACK_REASON_LENGTH = 100;
+const MAX_FEEDBACK_DONE_NOTE_LENGTH = 200;
 const FEEDBACK_TYPES = ["bug", "feature", "other"];
 
 const PHOTO_TYPES = {
@@ -1024,12 +1025,12 @@ async function serveFoodFile(request, env, url) {
 /* ---------- feedback board ---------- */
 
 // 需求反馈: either person can file a bug report or feature request, either person can mark it
-// done or delete it. Deletes are soft and require a reason, kept in the same row so both people
+// done (with a short summary of what was done, done_note — migration 0010) or delete it. Deletes are soft and require a reason, kept in the same row so both people
 // can see who removed what and why (there's no separate "undo" for this, unlike map pins).
 async function listFeedback(request, env) {
   const [items, deletedLog] = await Promise.all([
     env.DB.prepare(`
-      SELECT id, type, content, created_by, created_at, done, done_at, done_by
+      SELECT id, type, content, created_by, created_at, done, done_at, done_by, done_note
       FROM feedback_items
       WHERE visible = 1
       ORDER BY created_at ASC, id ASC
@@ -1096,11 +1097,16 @@ async function checkFeedback(request, env, user) {
     return json(request, env, { error: "缺少有效的反馈 id" }, 400);
   }
   const done = body.done === true;
+  // Marking done needs a short summary of what was actually done; un-marking clears it.
+  const note = done ? cleanString(body.note) : "";
+  if (done && (!note || note.length > MAX_FEEDBACK_DONE_NOTE_LENGTH)) {
+    return json(request, env, { error: `标记完成需要写一句做了什么，最多 ${MAX_FEEDBACK_DONE_NOTE_LENGTH} 个字` }, 400);
+  }
   const result = await env.DB.prepare(`
     UPDATE feedback_items
-    SET done = ?2, done_at = ?3, done_by = ?4
+    SET done = ?2, done_at = ?3, done_by = ?4, done_note = ?5
     WHERE id = ?1 AND visible = 1
-  `).bind(id, done ? 1 : 0, done ? new Date().toISOString() : null, done ? personOf(env, user) || null : null).run();
+  `).bind(id, done ? 1 : 0, done ? new Date().toISOString() : null, done ? personOf(env, user) || null : null, done ? note : null).run();
 
   if (!result.meta?.changes) {
     return json(request, env, { error: "没有找到这条反馈" }, 404);
