@@ -12,14 +12,26 @@
     return (location.pathname.split("/").pop() || "index.html") + location.search;
   }
 
+  function goToLogin() {
+    if (/login\.html$/.test(location.pathname)) return;
+    try { sessionStorage.removeItem(AUTH_KEY); } catch {}
+    location.replace(`login.html?next=${encodeURIComponent(currentPage())}`);
+  }
+
   // Login state lives in Cloudflare Access's cookie on the API domain; every request must carry it.
-  // If Access has expired the login, send the visitor back to the login page.
+  // If Access has expired the login, send the visitor back to the login page. Access usually answers
+  // an expired login with a redirect to its own login screen, which fetch reports as a network error
+  // ("Failed to fetch") rather than a 401 — so after a failed request, check the session before
+  // treating it as a connection problem.
   async function request(path, init = {}) {
-    const response = await fetch(path.startsWith("http") ? path : url(path), { ...init, credentials: "include" });
-    if (response.status === 401 && !/login\.html$/.test(location.pathname)) {
-      try { sessionStorage.removeItem(AUTH_KEY); } catch {}
-      location.replace(`login.html?next=${encodeURIComponent(currentPage())}`);
+    let response;
+    try {
+      response = await fetch(path.startsWith("http") ? path : url(path), { ...init, credentials: "include" });
+    } catch (error) {
+      if (navigator.onLine !== false && !(await checkSession())) goToLogin();
+      throw error;
     }
+    if (response.status === 401) goToLogin();
     return response;
   }
 

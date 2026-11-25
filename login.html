@@ -4,7 +4,7 @@
   <section class="login-panel"><a class="login-logo" href="login.html">Lulu <b>&amp;</b> DengDeng</a><div class="login-form-wrap"><span class="login-kicker"></span><h1>欢迎来到<br><span class="login-world">噜噜和噔噔的世界</span></h1>
     <div id="login-form"><label for="login-button">EMAIL LOGIN</label><button id="login-button" class="login-access-button" type="button" disabled><span>用邮箱验证码登录</span><b aria-hidden="true">→</b></button><p class="password-hint" id="login-hint">正在确认身份…</p><p class="login-error" id="login-error" role="alert" aria-live="polite"></p></div>
   </div><small class="login-foot">ONLY LULU &amp; DENGDENG · 2026</small></section>
-</main><script src="api.js"></script><script>
+</main><script src="api.js?v=20261125a"></script><script>
 const api=window.LULU_API,button=document.getElementById("login-button"),hint=document.getElementById("login-hint"),error=document.getElementById("login-error"),params=new URLSearchParams(location.search);
 const requested=params.get("next")||"",next=/^[\w-]+\.html(\?[^#]*)?$/.test(requested)?requested:"index.html";
 function enter(){try{sessionStorage.setItem(api.AUTH_KEY,"granted")}catch(storageError){error.textContent="浏览器阻止了登录状态，请关闭无痕模式后重试";return}location.replace(next)}
