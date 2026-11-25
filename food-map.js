@@ -277,7 +277,7 @@
   function drawMarkers() {
     markerLayer.clearLayers();
     groups().forEach(group => {
-      // A small green dot per city; the name and count show on hover.
+      // A small red dot per city (no photos on the map); the name and count show on hover.
       const active = filterKey === group.key;
       const marker = L.marker([group.lat, group.lng], {
         icon: L.divIcon({ className: "food-dot-wrap", html: `<span class="food-dot${active ? " active" : ""}"></span>`, iconSize: [20, 20], iconAnchor: [10, 10] }),

@@ -25,12 +25,12 @@
 .food-item-count{flex:none;font-size:10px;color:#9aa58f}
 .food-empty{padding:22px 6px;font-size:12px;line-height:1.9;color:#84927d}
 
-/* map markers: one small green dot per city (the 20px wrapper is the click target) */
+/* map markers: one small red dot per city (the 20px wrapper is the click target) */
 .food-map-stage{min-height:0}
 .food-dot-wrap{display:grid;place-items:center;background:none;border:0;cursor:pointer}
-.food-dot{display:block;width:12px;height:12px;border-radius:50%;background:#3f9c3c;border:2px solid #fffdf6;box-shadow:0 0 0 3px #3f9c3c38,0 1px 4px #23361f59;transition:transform .15s}
+.food-dot{display:block;width:12px;height:12px;border-radius:50%;background:#d6453a;border:2px solid #fffdf6;box-shadow:0 0 0 3px #d6453a33,0 1px 4px #4a1f1a59;transition:transform .15s}
 .food-dot-wrap:hover .food-dot,.food-dot-wrap:focus-visible .food-dot{transform:scale(1.3)}
-.food-dot.active{background:#2a7a28;transform:scale(1.3);box-shadow:0 0 0 4px #3f9c3c55,0 1px 4px #23361f59}
+.food-dot.active{background:#a8281f;transform:scale(1.3);box-shadow:0 0 0 4px #d6453a55,0 1px 4px #4a1f1a59}
 .leaflet-tooltip.food-dot-tip{padding:5px 9px;border:0;border-radius:0;background:#fbfaf2;color:#3f5440;font-size:11px;box-shadow:0 4px 12px #2f3f2c33}
 
 /* stars with half-star fill: a grey ☆ track and an orange fill clipped to the rating */
