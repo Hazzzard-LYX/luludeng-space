@@ -844,7 +844,9 @@ async function unhidePlace(request, env, url) {
 /* ---------- food map ---------- */
 
 // A food spot is a place we ate (name, city + optional street address, note, rating, date) with up
-// to MAX_FOOD_PHOTOS photos stored in R2 under food/. The map pins spots at their city's position.
+// to MAX_FOOD_PHOTOS photos. Ratings go from 0.5 to 5 in half stars and are stored in `stars`; the
+// older whole-star `rating` column is only read as a fallback (migration 0007).
+// Photos are stored in R2 under food/. The map pins spots at their city's position.
 const MAX_FOOD_NAME_LENGTH = 40;
 const MAX_FOOD_CITY_LENGTH = 50;
 const MAX_FOOD_ADDRESS_LENGTH = 100;
@@ -871,7 +873,7 @@ function readFoodFields(body) {
   if (address.length > MAX_FOOD_ADDRESS_LENGTH) return { error: `详细地址最多 ${MAX_FOOD_ADDRESS_LENGTH} 个字` };
   if (note.length > MAX_FOOD_NOTE_LENGTH) return { error: `评价最多 ${MAX_FOOD_NOTE_LENGTH} 个字` };
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90) return { error: "地图位置无效" };
-  if (rating !== null && !(Number.isInteger(rating) && rating >= 1 && rating <= 5)) return { error: "评分需要 1-5 颗星" };
+  if (rating !== null && !(Number.isInteger(rating * 2) && rating >= 0.5 && rating <= 5)) return { error: "评分需要 0.5-5 颗星（可以打半颗）" };
   if (visitedOn && !/^\d{4}-\d{2}-\d{2}$/.test(visitedOn)) return { error: "日期格式无效" };
   return {
     spot: {
@@ -886,7 +888,7 @@ function readFoodFields(body) {
 async function listFood(request, env, url) {
   const [spots, photos] = await Promise.all([
     env.DB.prepare(`
-      SELECT id, name, city, address, lat, lng, note, rating, visited_on, created_by, created_at
+      SELECT id, name, city, address, lat, lng, note, COALESCE(stars, rating) AS rating, visited_on, created_by, created_at
       FROM food_spots WHERE visible = 1
       ORDER BY COALESCE(visited_on, substr(created_at, 1, 10)) DESC, created_at DESC
     `).all(),
@@ -919,7 +921,7 @@ async function createFood(request, env, user) {
   const createdAt = new Date().toISOString();
   const createdBy = personOf(env, user) || null;
   await env.DB.prepare(`
-    INSERT INTO food_spots (id, name, city, address, lat, lng, note, rating, visited_on, created_by, created_at, visible)
+    INSERT INTO food_spots (id, name, city, address, lat, lng, note, stars, visited_on, created_by, created_at, visible)
     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 1)
   `).bind(id, spot.name, spot.city, spot.address, spot.lat, spot.lng, spot.note, spot.rating, spot.visited_on, createdBy, createdAt).run();
   return json(request, env, { ok: true, spot: { id, ...spot, created_by: createdBy, created_at: createdAt, photos: [] } }, 201);
@@ -937,7 +939,7 @@ async function updateFood(request, env) {
   const { spot, error } = readFoodFields(body);
   if (error) return json(request, env, { error }, 400);
   const result = await env.DB.prepare(`
-    UPDATE food_spots SET name = ?2, city = ?3, address = ?4, lat = ?5, lng = ?6, note = ?7, rating = ?8, visited_on = ?9
+    UPDATE food_spots SET name = ?2, city = ?3, address = ?4, lat = ?5, lng = ?6, note = ?7, stars = ?8, rating = NULL, visited_on = ?9
     WHERE id = ?1 AND visible = 1
   `).bind(id, spot.name, spot.city, spot.address, spot.lat, spot.lng, spot.note, spot.rating, spot.visited_on).run();
   if (!result.meta?.changes) return json(request, env, { error: "没有找到这家店" }, 404);

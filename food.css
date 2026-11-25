@@ -18,22 +18,31 @@
 .food-item:hover{border-color:#c8784a66;box-shadow:0 6px 16px #6d4a3014}
 .food-thumb{flex:none;width:58px;height:58px;overflow:hidden;background:var(--food-pale);display:grid;place-items:center}
 .food-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.food-thumb i,.food-marker i{font-style:normal;color:var(--food-deep);font-size:18px}
+.food-thumb i{font-style:normal;color:var(--food-deep);font-size:18px}
 .food-item-text{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
 .food-item-text b{font-weight:600;font-size:14px;color:#3f5440;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .food-item-text small{font-size:11px;color:#84927d}
-.food-item-stars{font-style:normal;font-size:11px;letter-spacing:1px;color:var(--food)}
 .food-item-count{flex:none;font-size:10px;color:#9aa58f}
 .food-empty{padding:22px 6px;font-size:12px;line-height:1.9;color:#84927d}
 
-/* map markers: a round photo (or 食) with a count */
+/* map markers: one small green dot per city (the 20px wrapper is the click target) */
 .food-map-stage{min-height:0}
-.food-marker-wrap{background:none;border:0}
-.food-marker{position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#fffaf2;border:3px solid #fffaf2;box-shadow:0 0 0 2px var(--food),0 6px 14px #5b3a2240;overflow:visible;transition:transform .2s}
-.food-marker-wrap .food-marker img{position:absolute;inset:0;width:100%!important;height:100%!important;border-radius:50%;object-fit:cover;display:block}
-.food-marker b{position:absolute;right:-8px;top:-7px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--food);color:#fff;font:600 11px/20px system-ui,sans-serif;text-align:center;box-shadow:0 2px 6px #5b3a2240}
-.food-marker.active{transform:scale(1.18);box-shadow:0 0 0 3px var(--food-deep),0 8px 18px #5b3a2259}
-.food-marker-wrap:hover .food-marker{transform:scale(1.12)}
+.food-dot-wrap{display:grid;place-items:center;background:none;border:0;cursor:pointer}
+.food-dot{display:block;width:12px;height:12px;border-radius:50%;background:#3f9c3c;border:2px solid #fffdf6;box-shadow:0 0 0 3px #3f9c3c38,0 1px 4px #23361f59;transition:transform .15s}
+.food-dot-wrap:hover .food-dot,.food-dot-wrap:focus-visible .food-dot{transform:scale(1.3)}
+.food-dot.active{background:#2a7a28;transform:scale(1.3);box-shadow:0 0 0 4px #3f9c3c55,0 1px 4px #23361f59}
+.leaflet-tooltip.food-dot-tip{padding:5px 9px;border:0;border-radius:0;background:#fbfaf2;color:#3f5440;font-size:11px;box-shadow:0 4px 12px #2f3f2c33}
+
+/* stars with half-star fill: a grey ☆ track and an orange fill clipped to the rating */
+.food-star-row{display:inline-flex;align-items:center;gap:1px}
+.food-star,.food-star-input{position:relative;display:inline-block;width:1em;height:1em;line-height:1}
+.food-star::before,.food-star-input::before{content:"★";position:absolute;inset:0;color:#ddd8c6}
+.food-star-fill{position:absolute;left:0;top:0;bottom:0;width:0;overflow:hidden;pointer-events:none}
+.food-star-fill::before{content:"★";position:absolute;left:0;top:0;color:var(--food)}
+.food-star-row small{margin-left:5px;font-size:10px;color:#a1784f}
+.food-item-text .food-star-row{font-size:12px}
+.detail-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.detail-meta .food-star-row{font-size:15px}
 
 /* dialogs */
 .food-dialog{width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 32px);padding:0;border:0;background:#fbfaf2;color:#3f5440;box-shadow:0 24px 70px #1f2a1c59;overflow:auto}
@@ -70,10 +79,12 @@
 .food-picked{margin:4px 0 0;font-size:12px;color:var(--food-deep)}
 .food-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 .food-rating-field{display:flex;flex-direction:column;gap:6px}
-.food-stars{display:flex;gap:2px;height:42px;align-items:center}
-.food-stars button{border:0;background:none;padding:0 2px;font-size:24px;line-height:1;color:#d9d6c6;cursor:pointer;transition:color .15s,transform .15s}
-.food-stars button.on{color:var(--food)}
-.food-stars button:hover{transform:scale(1.15)}
+.food-stars{display:flex;gap:3px;height:42px;align-items:center;font-size:27px}
+.food-star-input button{position:absolute;top:0;bottom:0;width:50%;padding:0;border:0;background:none;cursor:pointer;z-index:1}
+.food-star-input button.left{left:0}
+.food-star-input button.right{right:0}
+.food-star-input button:focus-visible{outline:2px solid #728963;outline-offset:1px}
+.food-stars-value{margin-left:8px;font-size:12px;color:var(--food-deep);white-space:nowrap}
 .food-photo-field{display:flex;flex-direction:column;gap:8px}
 .food-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
 .food-photo-grid:empty{display:none}

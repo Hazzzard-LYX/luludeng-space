@@ -50,8 +50,19 @@
     return value ? value.replace(/-/g, ".") : "";
   }
 
-  function stars(count) {
-    return count ? "★".repeat(count) + "☆".repeat(5 - count) : "";
+  // Read-only stars with half-star fill, e.g. 3.5 → three full, one half, one empty.
+  function starRow(value) {
+    const row = el("span", "food-star-row");
+    row.setAttribute("aria-label", `${value} 颗星`);
+    for (let index = 0; index < 5; index += 1) {
+      const star = el("span", "food-star");
+      const fill = el("span", "food-star-fill");
+      fill.style.width = `${Math.max(0, Math.min(1, value - index)) * 100}%`;
+      star.append(fill);
+      row.append(star);
+    }
+    row.append(el("small", "", String(value)));
+    return row;
   }
 
   async function call(path, init = {}) {
@@ -266,13 +277,15 @@
   function drawMarkers() {
     markerLayer.clearLayers();
     groups().forEach(group => {
-      const cover = group.spots.flatMap(spot => spot.photos)[0];
-      const html = `<span class="food-marker${filterKey === group.key ? " active" : ""}">${cover ? `<img src="${String(cover.src).replace(/["<>&]/g, encodeURIComponent)}" alt="">` : "<i>食</i>"}${group.spots.length > 1 ? `<b>${group.spots.length}</b>` : ""}</span>`;
+      // A small green dot per city; the name and count show on hover.
+      const active = filterKey === group.key;
       const marker = L.marker([group.lat, group.lng], {
-        icon: L.divIcon({ className: "food-marker-wrap", html, iconSize: [46, 46], iconAnchor: [23, 23] }),
-        title: `${group.city} · ${group.spots.length} 家店`,
-        keyboard: true
+        icon: L.divIcon({ className: "food-dot-wrap", html: `<span class="food-dot${active ? " active" : ""}"></span>`, iconSize: [20, 20], iconAnchor: [10, 10] }),
+        keyboard: true,
+        riseOnHover: true
       });
+      const names = group.spots.slice(0, 3).map(spot => spot.name).join("、") + (group.spots.length > 3 ? " …" : "");
+      marker.bindTooltip(`${group.city} · ${group.spots.length} 家：${names}`, { direction: "top", offset: [0, -8], className: "food-dot-tip" });
       marker.on("click", () => {
         if (pickingOnMap) return;
         setFilter(group.key);
@@ -317,7 +330,7 @@
       } else thumb.append(el("i", "", "食"));
       const text = el("span", "food-item-text");
       text.append(el("b", "", spot.name), el("small", "", [spot.city, formatDate(spot.visited_on)].filter(Boolean).join(" · ")));
-      if (spot.rating) text.append(el("em", "food-item-stars", stars(spot.rating)));
+      if (spot.rating) text.append(starRow(spot.rating));
       button.append(thumb, text);
       if (spot.photos.length > 1) button.append(el("span", "food-item-count", `${spot.photos.length} 张`));
       button.addEventListener("click", () => {
@@ -338,7 +351,11 @@
     document.getElementById("detail-city").textContent = [spot.city, spot.address].filter(Boolean).join(" · ");
     document.getElementById("detail-name").textContent = spot.name;
     const who = { lulu: "噜噜", dengdeng: "噔噔" }[spot.created_by];
-    document.getElementById("detail-meta").textContent = [stars(spot.rating), formatDate(spot.visited_on), who ? `${who}记的` : ""].filter(Boolean).join("　");
+    const meta = document.getElementById("detail-meta");
+    meta.replaceChildren();
+    if (spot.rating) meta.append(starRow(spot.rating));
+    const metaText = [formatDate(spot.visited_on), who ? `${who}记的` : ""].filter(Boolean).join("　");
+    if (metaText) meta.append(el("span", "", metaText));
     document.getElementById("detail-note").textContent = spot.note || "";
     const photos = document.getElementById("detail-photos");
     photos.replaceChildren();
@@ -392,22 +409,39 @@
 
   /* ---------- form ---------- */
 
+  // Five stars, each split into a left half (x.5) and a right half (whole star).
+  // Clicking the current value again clears the rating.
   const starBox = document.getElementById("food-stars");
-  for (let value = 1; value <= 5; value += 1) {
-    const star = el("button", "", "★");
-    star.type = "button";
-    star.setAttribute("role", "radio");
-    star.setAttribute("aria-label", `${value} 颗星`);
-    star.addEventListener("click", () => setRating(rating === value ? 0 : value));
+  const starValue = el("span", "food-stars-value");
+  for (let index = 0; index < 5; index += 1) {
+    const star = el("span", "food-star-input");
+    star.append(el("span", "food-star-fill"));
+    [index + 0.5, index + 1].forEach((value, half) => {
+      const button = el("button", half ? "right" : "left");
+      button.type = "button";
+      button.setAttribute("role", "radio");
+      button.setAttribute("aria-label", `${value} 颗星`);
+      button.dataset.value = String(value);
+      button.addEventListener("click", () => setRating(rating === value ? 0 : value));
+      button.addEventListener("mouseenter", () => paintStars(value));
+      star.append(button);
+    });
     starBox.append(star);
+  }
+  starBox.append(starValue);
+  starBox.addEventListener("mouseleave", () => paintStars(rating));
+
+  function paintStars(value) {
+    [...starBox.querySelectorAll(".food-star-fill")].forEach((fill, index) => {
+      fill.style.width = `${Math.max(0, Math.min(1, value - index)) * 100}%`;
+    });
+    starValue.textContent = value ? `${value} 星` : "";
   }
 
   function setRating(value) {
     rating = value;
-    [...starBox.children].forEach((star, index) => {
-      star.classList.toggle("on", index < value);
-      star.setAttribute("aria-checked", String(index + 1 === value));
-    });
+    starBox.querySelectorAll("button").forEach(button => button.setAttribute("aria-checked", String(Number(button.dataset.value) === value)));
+    paintStars(value);
   }
 
   function today() {
