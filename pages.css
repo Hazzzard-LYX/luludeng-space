@@ -251,3 +251,11 @@
 .custom-place-page .custom-place-gallery figure .place-photo-delete:disabled{cursor:wait;opacity:1}
 @media(hover:none){.custom-place-page .custom-place-gallery figure .place-photo-delete{opacity:.92;transform:none}}
 .custom-place-page .custom-place-gallery figure.removing{opacity:0;transform:scale(.92);transition:opacity .25s,transform .25s}
+/* Home counter: the hours/minutes/seconds line and the start date sit on a frosted cream pill (like the kicker) instead of
+   a wide cream glow, which blurred the letter edges over the background photo. Slightly darker text for contrast. */
+.matcha-home .clock-rest,.matcha-home .clock-since{border-radius:999px;background:#f7f6ecc7;box-shadow:0 4px 18px #3c4c3414;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);text-shadow:none}
+.matcha-home .clock-rest{padding:6px 26px;color:#3f5a3a;font-weight:500}
+.matcha-home .clock-rest b{color:#34492f}
+.matcha-home .clock-rest i{color:#8fa47f}
+.matcha-home .clock-since{padding:5px 18px;color:#4c6346;font-size:13px;letter-spacing:.1em}
+@media(max-width:760px){.matcha-home .clock-rest{padding:5px 16px}.matcha-home .clock-since{padding:4px 14px;font-size:12px}}
