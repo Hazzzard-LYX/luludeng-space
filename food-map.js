@@ -409,9 +409,11 @@
 
   /* ---------- form ---------- */
 
-  // Five stars, each split into a left half (x.5) and a right half (whole star).
-  // Clicking the current value again clears the rating.
+  // Five stars; the left half of a star gives x.5, the right half a whole star. Mouse and finger
+  // work from the pointer position (tap, or drag along the row), so the halves don't need precise
+  // aiming; the hidden half-star buttons are for the keyboard. Choosing the current value clears it.
   const starBox = document.getElementById("food-stars");
+  const starTrack = el("span", "food-star-track");
   const starValue = el("span", "food-stars-value");
   for (let index = 0; index < 5; index += 1) {
     const star = el("span", "food-star-input");
@@ -423,13 +425,44 @@
       button.setAttribute("aria-label", `${value} 颗星`);
       button.dataset.value = String(value);
       button.addEventListener("click", () => setRating(rating === value ? 0 : value));
-      button.addEventListener("mouseenter", () => paintStars(value));
       star.append(button);
     });
-    starBox.append(star);
+    starTrack.append(star);
   }
-  starBox.append(starValue);
-  starBox.addEventListener("mouseleave", () => paintStars(rating));
+  starBox.append(starTrack, starValue);
+
+  function valueAt(clientX) {
+    const stars = [...starTrack.children];
+    for (let index = 0; index < stars.length; index += 1) {
+      const box = stars[index].getBoundingClientRect();
+      if (clientX < box.left + box.width / 2) return index + 0.5;
+      if (clientX <= box.right + 2) return index + 1;
+    }
+    return 5;
+  }
+
+  let dragStart = null; // { value, moved }
+  starTrack.addEventListener("pointerdown", event => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    starTrack.setPointerCapture(event.pointerId);
+    dragStart = { value: valueAt(event.clientX), moved: false };
+    paintStars(dragStart.value);
+  });
+  starTrack.addEventListener("pointermove", event => {
+    const value = valueAt(event.clientX);
+    if (dragStart && value !== dragStart.value) dragStart.moved = true;
+    if (dragStart || event.pointerType === "mouse") paintStars(value);
+  });
+  starTrack.addEventListener("pointerup", event => {
+    if (!dragStart) return;
+    const value = valueAt(event.clientX);
+    // A plain tap on the current value clears it; a drag always sets the value it ends on.
+    setRating(!dragStart.moved && value === rating ? 0 : value);
+    dragStart = null;
+  });
+  starTrack.addEventListener("pointercancel", () => { dragStart = null; paintStars(rating); });
+  starTrack.addEventListener("pointerleave", () => { if (!dragStart) paintStars(rating); });
 
   function paintStars(value) {
     [...starBox.querySelectorAll(".food-star-fill")].forEach((fill, index) => {
